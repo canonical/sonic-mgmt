@@ -6,6 +6,8 @@ __pycache__/
 # Ansible files
 .ansible
 ansible.log
+ansible/*.log
+tests/*.log
 
 # Test generated files
 tests/logs
