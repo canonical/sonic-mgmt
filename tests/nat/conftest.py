@@ -277,7 +277,7 @@ def enable_nat_feature(request, duthost):
         duthost.command("config nat feature enable")
 
 
-@pytest.mark.trylast
+@pytest.hookimpl(trylast=True) 
 def pytest_collection_modifyitems(items):
     """Remove redundant test cases
     """

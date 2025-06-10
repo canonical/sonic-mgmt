@@ -448,7 +448,7 @@ def has_portchannels(duthosts, rand_one_dut_hostname):
     # Retrieve the configuration facts from the DUT
     cfg_facts = duthost.config_facts(host=duthost.hostname, source="running")['ansible_facts']
     # Check if the portchannel interfaces list or portchannels dictionary is empty
-    if not cfg_facts.get("minigraph_portchannel_interfaces", []) or not cfg_facts.get("minigraph_portchannels", {}):
+    if not cfg_facts.get("PORTCHANNEL_INTERFACE", {}) or not cfg_facts.get("PORTCHANNEL", {}) or not cfg_facts.get("PORTCHANNEL_MEMBER", {}):
         return False
 
     return True

@@ -758,7 +758,7 @@ class BaseAclTest(six.with_metaclass(ABCMeta, object)):
             raise err
         logger.info("{}: ACL rule application finished".format(duthost.hostname))
 
-    @pytest.yield_fixture(scope="class", autouse=True)
+    @pytest.fixture(scope="class", autouse=True)
     def counters_sanity_check(self, duthosts, acl_rules, acl_table):
         """Validate that the counters for each rule in the rules list increased as expected.
 
