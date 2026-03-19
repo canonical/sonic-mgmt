@@ -193,7 +193,7 @@ def post_upgrade_actions(sonichosts, localhost, disk_used_percent):
         # Increase this time after image upgrade
         sonichosts.shell(
             'sed -i "s/^ClientAliveInterval [0-9].*/ClientAliveInterval 900/g" /etc/ssh/sshd_config '
-            '&& systemctl restart sshd',
+            '&& systemctl restart ssh',
             module_attrs={"become": True}
         )
 
