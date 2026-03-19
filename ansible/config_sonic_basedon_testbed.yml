@@ -905,7 +905,7 @@
           host: "{{ ansible_hostv6 if (use_ipv6_mgmt|default(false)|bool and ansible_hostv6 is defined and ansible_hostv6 != '') else (original_ipv4_address if original_ipv4_address is defined else ansible_host) }}"
           port: 22
           state: started
-          search_regex: "OpenSSH_[\\w\\.]+ Debian"
+          search_regex: "OpenSSH_[\\w\\.]+ Ubuntu"
           delay: 10
           timeout: 600
         changed_when: false

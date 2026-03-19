@@ -483,7 +483,7 @@ def restore_config_db(localhost, duthost, ptfhost):
     # the `mv /etc/sonic/config_db.json.bak /etc/sonic/config_db.json` is executed on DUT.
     # If the DUT is still inaccessible after timeout, we may have already lose the DUT. Something sad happened.
     localhost.wait_for(
-        host=g_vars["dut_ip"], port=22, state="started", search_regex="OpenSSH_[\\w\\.]+ Debian", timeout=180
+        host=g_vars["dut_ip"], port=22, state="started", search_regex="OpenSSH_[\\w\\.]+ Ubuntu", timeout=180
     )  # Similiar approach to increase the chance that the next line get executed.
     duthost.shell("mv /etc/sonic/config_db.json.bak /etc/sonic/config_db.json")
     reboot(duthost, localhost)

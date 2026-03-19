@@ -11,7 +11,7 @@ pytestmark = [
 ]
 
 SONIC_SSH_PORT = 22
-SONIC_SSH_REGEX = "OpenSSH_[\\w\\.]+ Debian"
+SONIC_SSH_REGEX = "OpenSSH_[\\w\\.]+ Ubuntu"
 HTTP_PORT = "8080"
 TEST_FILE_NAME = ""
 

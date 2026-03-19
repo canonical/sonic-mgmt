@@ -123,7 +123,7 @@ def restore_config_db(localhost, duthost):
     localhost.wait_for(host=g_vars["dut_ip"],
                        port=22,
                        state='started',
-                       search_regex='OpenSSH_[\\w\\.]+ Debian',
+                       search_regex='OpenSSH_[\\w\\.]+ Ubuntu',
                        timeout=180)   # Similiar approach to increase the chance that the next line get executed.
     duthost.shell("mv /etc/sonic/config_db.json.bak /etc/sonic/config_db.json")
     reboot(duthost, localhost)
