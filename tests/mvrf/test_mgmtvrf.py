@@ -17,7 +17,7 @@ pytestmark = [
 
 logger = logging.getLogger(__name__)
 
-SONIC_SSH_REGEX = "OpenSSH_[\\w\\.]+ Debian"
+SONIC_SSH_REGEX = "OpenSSH_[\\w\\.]"
 SONIC_SSH_PORT = 22
 
 

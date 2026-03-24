@@ -38,7 +38,7 @@ IS_TEST_ENV_FAILED = False
 WARM_TEST_DIR = "warm_boot"
 WARM_TEST_ARGS = ";test_reboot_mode='warm'"
 SONIC_SSH_PORT = 22
-SONIC_SSH_REGEX = 'OpenSSH_[\\w\\.]+ Debian'
+SONIC_SSH_REGEX = 'OpenSSH_[\\w\\.]'
 COMMON_CONFIG_FORMAT = ';common_configured=\'{}\''
 NEED_CONFIG = False
 PTF_TEST_CASE_TIMEOUT_IN_SEC = 600

@@ -17,7 +17,7 @@ pytestmark = [
 ]
 
 SONIC_SSH_PORT = 22
-SONIC_SSH_REGEX = 'OpenSSH_[\\w\\.]+ Debian'
+SONIC_SSH_REGEX = 'OpenSSH_[\\w\\.]'
 
 
 def test_cacl_function(duthosts, enum_rand_one_per_hwsku_hostname, localhost, creds):

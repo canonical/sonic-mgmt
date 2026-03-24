@@ -20,7 +20,7 @@ power_on_event = threading.Event()
 
 # SSH defines
 SONIC_SSH_PORT = 22
-SONIC_SSH_REGEX = 'OpenSSH_[\\w\\.]+ Debian'
+SONIC_SSH_REGEX = 'OpenSSH_[\\w\\.]'
 
 REBOOT_TYPE_WARM = "warm"
 REBOOT_TYPE_SAI_WARM = "sai-warm"

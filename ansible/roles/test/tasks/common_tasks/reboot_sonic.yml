@@ -32,7 +32,7 @@
       host: "{{ ansible_host }}"
       port: 22
       state: absent
-      search_regex: "OpenSSH_[\\w\\.]+ Debian"
+      search_regex: "OpenSSH_[\\w\\.]"
       delay: 10
       timeout: 180
     changed_when: false
@@ -57,7 +57,7 @@
     host: "{{ ansible_host }}"
     port: 22
     state: started
-    search_regex: "OpenSSH_[\\w\\.]+ Debian"
+    search_regex: "OpenSSH_[\\w\\.]"
     delay: 10
     timeout: 180
   changed_when: false

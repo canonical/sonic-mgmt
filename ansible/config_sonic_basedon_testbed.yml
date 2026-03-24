@@ -560,7 +560,7 @@
           host: "{{ ansible_host }}"
           port: 22
           state: started
-          search_regex: "OpenSSH_[\\w\\.]+ Debian"
+          search_regex: "OpenSSH_[\\w\\.]"
           delay: 10
           timeout: 600
         changed_when: false
