@@ -417,6 +417,9 @@ def _check_monit_services_status(check_result, monit_services_status):
         check_result["services_status"].update({service_name: service_info["service_status"]})
         if service_info["service_status"] == "Not monitored":
             continue
+        # Monit 5.35 shows a program checked 'every N cycles' as Waiting until its first result
+        if service_info["service_type"] == "Program" and service_info["service_status"] == "Waiting":
+            continue
         # Newer versions of Monit have standardized on OK as a success result
         if service_info["service_status"] == "OK":
             continue
