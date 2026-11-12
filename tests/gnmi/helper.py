@@ -27,11 +27,9 @@ def apply_cert_config(duthost):
     metadata = cfg_facts["DEVICE_METADATA"]["localhost"]
     subtype = metadata.get('subtype', None)
     stopped_programs = []
-    dut_command = "docker exec %s supervisorctl status %s" % (env.gnmi_container, env.gnmi_program)
-    if "RUNNING" in duthost.shell(dut_command, module_ignore_errors=True)["stdout"]:
-        duthost.shell(
-            "docker exec %s supervisorctl stop %s" % (env.gnmi_container, env.gnmi_program)
-        )
+    # stop the program before killing its process: a rock shuts the container down when gnmi-native fails
+    if check_gnmi_status(duthost):
+        duthost.control_container_process(env.gnmi_container, "stop", [env.gnmi_program])
         logger.info("Stopped supervisord program: %s", env.gnmi_program)
         stopped_programs.append(env.gnmi_program)
 
@@ -79,9 +77,8 @@ def apply_cert_config(duthost):
 
 def check_gnmi_status(duthost):
     env = GNMIEnvironment(duthost, GNMIEnvironment.GNMI_MODE)
-    dut_command = "docker exec %s supervisorctl status %s" % (env.gnmi_container, env.gnmi_program)
-    output = duthost.shell(dut_command, module_ignore_errors=True)
-    return "RUNNING" in output['stdout']
+    program = duthost.get_process_table(env.gnmi_container).get(env.gnmi_program, bare=False)
+    return program is not None and program.state == "RUNNING"
 
 
 def recover_cert_config(duthost, stopped_programs=None):
@@ -96,8 +93,7 @@ def recover_cert_config(duthost, stopped_programs=None):
     if stopped_programs:
         for program in stopped_programs:
             logger.info("Restarting supervisord program: %s", program)
-            dut_command = "docker exec %s supervisorctl start %s" % (env.gnmi_container, program)
-            duthost.shell(dut_command, module_ignore_errors=True)
+            duthost.control_container_process(env.gnmi_container, "start", [program], module_ignore_errors=True)
 
     # Remove gnmi client cert common name
     del_gnmi_client_common_name(duthost, "test.client.gnmi.sonic")
