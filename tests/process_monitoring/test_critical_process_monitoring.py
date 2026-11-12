@@ -512,8 +512,7 @@ def ensure_process_is_running(duthost, container_name, critical_process):
     else:
         logger.info("Process '{}' in container '{}' is not running and start it..."
                     .format(critical_process, container_name))
-        command_output = duthost.shell("docker exec {} supervisorctl start {}"
-                                       .format(container_name, critical_process))
+        command_output = duthost.control_container_process(container_name, "start", [critical_process])
         if command_output["rc"] == 0:
             logger.info("Process '{}' in container '{}' is started.".format(critical_process, container_name))
         else:
