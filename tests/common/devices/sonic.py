@@ -22,6 +22,7 @@ except ImportError:
 from tests.common.devices.base import AnsibleHostBase
 from tests.common.devices.constants import ACL_COUNTERS_UPDATE_INTERVAL_IN_SEC
 from tests.common.helpers.dut_utils import is_supervisor_node, is_macsec_capable_node
+from tests.common.helpers.os_profile import os_profile_command, parse_os_profile_output
 from tests.common.utilities import get_host_visible_vars, wait_until
 from tests.common.cache import cached
 from tests.common.helpers.constants import DEFAULT_ASIC_ID, DEFAULT_NAMESPACE
@@ -505,6 +506,18 @@ class SonicHost(AnsibleHostBase):
                 return retry
         # Return the final retried result
         return retry
+
+    def os_profile(self, container=None):
+        """
+        @summary: Operating system of the host, or of a container when one is given
+        @return: An os_profile.OsProfile; the host result is cached
+        """
+        if container is None and getattr(self, "_os_profile", None) is not None:
+            return self._os_profile
+        profile = parse_os_profile_output(self.shell(os_profile_command(container))["stdout"])
+        if container is None:
+            self._os_profile = profile
+        return profile
 
     def get_critical_group_and_process_lists(self, container_name):
         """
