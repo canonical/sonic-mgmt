@@ -581,25 +581,22 @@ class MultiAsicSonicHost(object):
             # and gbsyncd feature will be added to services
             if self.get_facts()['asic_type'] == 'vs' and "gbsyncd" in docker:
                 continue
+            # Edit through the container's root from the host: some rock containers ship no sed
+            rsyslog_conf = r"/proc/$(docker inspect -f \{{\{{.State.Pid\}}\}} {})/root/etc/rsyslog.conf"
             cmd_disable_rate_limit = (
-                r"docker exec -i {} sed -i "
+                r"sudo sed -i "
                 r"'s/^\$SystemLogRateLimit/#\$SystemLogRateLimit/g' "
-                r"/etc/rsyslog.conf"
-            )
+            ) + rsyslog_conf
             cmd_enable_rate_limit = (
-                r"docker exec -i {} sed -i "
+                r"sudo sed -i "
                 r"'s/^#\$SystemLogRateLimit/\$SystemLogRateLimit/g' "
-                r"/etc/rsyslog.conf"
-            )
-            cmd_reload = r"docker exec -i {} supervisorctl restart rsyslogd"
-            cmds = []
+            ) + rsyslog_conf
 
             if rl_option == 'disable':
-                cmds.append(cmd_disable_rate_limit.format(docker))
+                self.sonichost.shell(cmd_disable_rate_limit.format(docker))
             else:
-                cmds.append(cmd_enable_rate_limit.format(docker))
-            cmds.append(cmd_reload.format(docker))
-            self.sonichost.shell_cmds(cmds=cmds)
+                self.sonichost.shell(cmd_enable_rate_limit.format(docker))
+            self.sonichost.control_container_process(docker, "restart", ["rsyslogd"])
 
     def get_bgp_neighbors(self, namespace=None):
         """
