@@ -148,18 +148,12 @@ def wait_dhcp_relay_ready(duthost, relay_types):
     last_state = {'states': {}, 'internal_procs': []}
 
     def _supervisor_status_map():
-        # supervisorctl returns rc != 0 if ANY entry is not RUNNING (e.g. the one-shot
-        # 'start' / 'dependent-startup' entries are EXITED by design). Ignore the rc and
-        # parse stdout - the per-entry RUNNING checks below are the real readiness gate.
-        out = duthost.shell('docker exec dhcp_relay supervisorctl status',
-                            module_ignore_errors=True)['stdout_lines']
-        states = {}
-        for line in out:
-            parts = line.split()
-            if len(parts) >= 2:
-                # Strip optional "group:" prefix (e.g. "dhcp-relay:dhcprelayd" -> "dhcprelayd").
-                states[parts[0].split(':')[-1]] = parts[1]
-        return states
+        # One-shot entries such as 'start' are EXITED by design; the per-entry RUNNING checks below
+        # are the real readiness gate. Names are bare ("dhcp-relay:dhcprelayd" -> "dhcprelayd").
+        table = duthost.get_process_table('dhcp_relay')
+        if not table.running or table.error:
+            return {}
+        return {process.name: process.state for process in table.processes}
 
     def _is_dhcp_relay_ready():
         states = _supervisor_status_map()
@@ -727,11 +721,10 @@ def check_dhcp_stress_status(duthost, test_duration_seconds):
             assert cpu_usage_float < 50.0, "DHCP CPU usage is too high: {}%".format(cpu_usage_float)
 
         # Check the status of multiple DHCP processes inside the container
-        dhcp_process_status = duthost.shell(
-             'docker exec dhcp_relay supervisorctl status | grep dhcp | grep -v dhcp6')["stdout"]
-        if dhcp_process_status:
-            dhcp_process_status_lines = dhcp_process_status.splitlines()
-            for dhcp_process_status_line in dhcp_process_status_lines:
-                process_name, process_status = dhcp_process_status_line.split()[0], dhcp_process_status_line.split()[1],
-                assert process_status == "RUNNING", "{} is not running!".format(process_name)
+        table = duthost.get_process_table('dhcp_relay')
+        relays = [process for process in table.processes
+                  if "dhcp" in process.full_name and "dhcp6" not in process.full_name]
+        assert table.running and not table.error and relays, "No DHCP relay program found: {}".format(table)
+        for process in relays:
+            assert process.state == "RUNNING", "{} is not running!".format(process.full_name)
     time.sleep(sleep_time)
