@@ -308,7 +308,8 @@ class ReloadTest(BaseTest):
 
         # Check if platform type is kvm
         self.platform_type = self.get_dut_platform_type()
-        if self.platform_type == 'x86_64-kvm_x86_64-r0':
+        # vs: x86, or arm64 under ONIE's qemu platform name
+        if self.platform_type in ('x86_64-kvm_x86_64-r0', 'arm64-qemu_armv8a-r0'):
             self.kvm_test = True
         else:
             self.kvm_test = False

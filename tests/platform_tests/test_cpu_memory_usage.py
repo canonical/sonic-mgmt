@@ -3,7 +3,7 @@ import pytest
 
 from collections import namedtuple, Counter
 from tests.platform_tests.counterpoll.cpu_memory_helper import counterpoll_type         # noqa: F401
-from tests.common.constants import CounterpollConstants
+from tests.common.constants import CounterpollConstants, KVM_PLATFORMS
 from tests.common.helpers.counterpoll_helper import ConterpollHelper
 from tests.common.mellanox_data import is_mellanox_device
 from tests.common.utilities import wait_until
@@ -35,8 +35,8 @@ def setup_thresholds(rand_selected_dut):
     is_asan = is_asan_image(duthost)
     if ('arista_7800' in duthost.facts['platform'].lower()) or duthost.facts['platform'] in ('x86_64-mlnx_msn4600c-r0'):
         memory_threshold = 75
-    if duthost.facts['platform'] in ('x86_64-arista_7050_qx32', 'x86_64-kvm_x86_64-r0', 'x86_64-arista_7050_qx32s',
-                                     'x86_64-cel_e1031-r0', 'x86_64-arista_7800r3a_36dm2_lc') or is_asan:
+    if duthost.facts['platform'] in ('x86_64-arista_7050_qx32', 'x86_64-arista_7050_qx32s', 'x86_64-cel_e1031-r0',
+                                     'x86_64-arista_7800r3a_36dm2_lc') + KVM_PLATFORMS or is_asan:
         memory_threshold = 90
     if duthost.facts['platform'] in ('x86_64-mlnx_msn3800-r0', 'arm64-nvda_bf-bf3comdpu',
                                      'x86_64-mlnx_msn2700-r0', 'x86_64-mlnx_msn2700a1-r0', 'x86_64-mlnx_msn3420-r0',

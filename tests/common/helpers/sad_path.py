@@ -7,6 +7,7 @@ import logging
 from itertools import groupby, chain, islice
 
 from tests.common.platform.device_utils import fanout_switch_port_lookup
+from tests.common.constants import KVM_PLATFORMS
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +142,7 @@ class NeighVlanMemberDown(VlanMemberDown):
         super(NeighVlanMemberDown, self).setup(test_data)
 
         for port in self.ports:
-            if self.duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+            if self.duthost.facts['platform'] in KVM_PLATFORMS:
                 index = int(self.port_info.get(port).get("index")) + 1
                 self.vmhost.shell("virsh domif-setlink {} {}-{} down".format(
                     self.duthost.hostname, self.duthost.hostname, index))
@@ -156,7 +157,7 @@ class NeighVlanMemberDown(VlanMemberDown):
 
     def revert(self):
         for port in self.ports:
-            if self.duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+            if self.duthost.facts['platform'] in KVM_PLATFORMS:
                 index = int(self.port_info.get(port).get("index")) + 1
                 self.vmhost.shell("virsh domif-setlink {} {}-{} up".format(
                     self.duthost.hostname, self.duthost.hostname, index))

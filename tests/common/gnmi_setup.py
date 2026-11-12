@@ -18,6 +18,7 @@ import tests.common.gu_utils as gu_utils
 from tests.common.cert_utils import TlsCertificateGenerator
 from tests.common.helpers.gnmi_utils import GNMIEnvironment
 from tests.common.utilities import wait_until
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.helpers.ntp_helper import NtpDaemon, get_ntp_daemon_in_use   # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -141,7 +142,7 @@ def apply_cert_config(duthost):
         time.sleep(GNMI_SERVER_START_WAIT_TIME)
         dut_command = "sudo netstat -nap | grep %d" % env.gnmi_port
         output = duthost.shell(dut_command, module_ignore_errors=True)
-        if is_time_synced is False and duthost.facts['platform'] != 'x86_64-kvm_x86_64-r0':
+        if is_time_synced is False and duthost.facts['platform'] not in KVM_PLATFORMS:
             is_time_synced = wait_until(60, 3, 0, check_system_time_sync, duthost)
             assert is_time_synced, "Failed to synchronize DUT system time with NTP Server"
         if env.gnmi_process not in output['stdout']:
