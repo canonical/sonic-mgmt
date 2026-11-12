@@ -269,6 +269,15 @@ def test_get_group_program_info():
     assert dict(info) == {"dhcprelayd": ["RUNNING", _rock_pid("dhcp_relay", "dhcprelayd")]}
 
 
+def test_get_group_program_info_of_a_fatal_supervisord_program():
+    # 36c29fc raised ValueError on int("Exited"); now the pid is -1 and kill_process_by_pid refuses it
+    text = ("@@backend@@\nsupervisord\n@@critical@@\ngroup:dhcp-relay\n@@status@@\n"
+            "dhcp-relay:dhcp6relay            FATAL     Exited too quickly (process log may have details)\n"
+            "dhcp-relay:dhcprelayd            RUNNING   pid 41, uptime 1:00:00\n@@end@@\n")
+    info = DUT_UTILS["get_group_program_info"](FakeHost({"dhcp_relay": text}), "dhcp_relay", "dhcp-relay")
+    assert dict(info) == {"dhcp6relay": ["FATAL", -1], "dhcprelayd": ["RUNNING", 41]}
+
+
 def test_is_service_running():
     host = FakeHost()
     assert host.is_service_running("orchagent", "swss") is True
