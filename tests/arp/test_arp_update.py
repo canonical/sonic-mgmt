@@ -13,6 +13,7 @@ from tests.arp.arp_utils import (clear_dut_arp_cache, fdb_cleanup, get_dut_mac,
                                  get_vlan_ipv6)
 from tests.common.dualtor.mux_simulator_control import toggle_all_simulator_ports_to_rand_selected_tor  # noqa: F401
 from tests.common.fixtures.ptfhost_utils import setup_vlan_arp_responder, run_icmp_responder  # noqa: F401
+from tests.common.helpers import container_processes
 from tests.common.helpers.assertions import pytest_assert as pt_assert
 from tests.common.helpers.constants import PTF_TIMEOUT
 from tests.common.utilities import wait_until
@@ -28,12 +29,12 @@ pytestmark = [
 @pytest.fixture
 def pause_arp_update(rand_selected_dut):
     cmds = [
-        "docker exec swss supervisorctl stop arp_update",
+        container_processes.build_control_command("swss", "stop", ["arp_update"]),
         "ip neigh flush all"
     ]
     rand_selected_dut.shell_cmds(cmds=cmds)
     yield
-    cmds[0] = "docker exec swss supervisorctl start arp_update"
+    cmds[0] = container_processes.build_control_command("swss", "start", ["arp_update"])
     rand_selected_dut.shell_cmds(cmds=cmds)
 
 
@@ -190,7 +191,7 @@ def test_kernel_asic_mac_mismatch(
               "Ensure arp_update is stopped before modifying APPL_DB.")
     logger.info("APPL_DB and kernel are out of sync (expected)")
 
-    rand_selected_dut.shell("docker exec swss supervisorctl start arp_update")
+    rand_selected_dut.control_container_process("swss", "start", ["arp_update"])
 
     pt_assert(
         wait_until(30, 2, 0, appl_db_neighbor_syncd, rand_selected_dut, vlan_name, target_ip, target_mac),

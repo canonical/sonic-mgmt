@@ -413,7 +413,6 @@ def expect_host_rsyslog_restart(duthost, timeout=30):
 
 def wait_rsyslogd_restart(duthost, service_name, old_pid):
     logger.info('Waiting rsyslogd restart or ready state')
-    cmd = "docker exec -i {} bash -c 'supervisorctl status rsyslogd'".format(service_name)
     wait_time = 30
     # Some config updates can be no-op and keep same PID; require two stable checks.
     stable_ready_same_pid = 0
@@ -421,8 +420,8 @@ def wait_rsyslogd_restart(duthost, service_name, old_pid):
         wait_time -= 1
         # Detect restart first (PID change), but also allow no-op updates.
         new_pid = get_rsyslogd_pid(duthost, service_name)
-        output = duthost.command(cmd, module_ignore_errors=True)['stdout'].strip()
-        if 'RUNNING' not in output:
+        rsyslogd = duthost.get_process_table(service_name).get("rsyslogd", bare=False)
+        if rsyslogd is None or rsyslogd.state != "RUNNING":
             time.sleep(1)
             continue
 

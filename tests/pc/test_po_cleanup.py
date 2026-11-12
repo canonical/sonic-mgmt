@@ -135,7 +135,7 @@ def test_po_cleanup_after_reload(duthosts, enum_rand_one_per_hwsku_frontend_host
         for asic_id in duthost.get_asic_ids():
             if asic_id is None:
                 asic_id = ""
-            duthost.command("docker exec swss{} supervisorctl stop rsyslogd".format(asic_id))
+            duthost.control_container_process("swss{}".format(asic_id), "stop", ["rsyslogd"])
 
         with loganalyzer:
             with DisableLogrotateAndWaitSyslogContext(
