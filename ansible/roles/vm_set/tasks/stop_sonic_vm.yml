@@ -13,9 +13,12 @@
   become: yes
 
 - name: Undefine vm {{ dut_name }}
-  virt: name={{ dut_name }}
-        command=undefine
-        uri=qemu:///system
+  virt:
+    name: "{{ dut_name }}"
+    command: undefine
+    # an aarch64 domain has UEFI NVRAM, and libvirt refuses to undefine it without this flag
+    flags: "{{ ['nvram'] if ansible_architecture == 'aarch64' else omit }}"
+    uri: qemu:///system
   when: dut_name in vm_list_defined.list_vms
   become: yes
 
