@@ -1,0 +1,55 @@
+<domain type='kvm'>
+  <name>{{ dut_name }}</name>
+  <memory unit='GiB'>6</memory>
+  <currentMemory unit='GiB'>6</currentMemory>
+  <vcpu placement='static'>4</vcpu>
+  <cpu mode='host-passthrough' check='none'>
+    <topology sockets='1' dies='1' cores='4' threads='1'/>
+  </cpu>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
+  <os>
+    <type arch='aarch64' machine='virt'>hvm</type>
+    <loader readonly='yes' type='pflash'>{{ vm_aarch64_uefi_code | default('/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd') }}</loader>
+    <nvram template='{{ vm_aarch64_uefi_vars | default('/usr/share/AAVMF/AAVMF_VARS.fd') }}'/>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <gic version='3'/>
+  </features>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/bin/qemu-system-aarch64</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='writeback'/>
+      <source file='{{ disk_image }}'/>
+      <target bus='virtio' dev='vda'/>
+    </disk>
+    <serial type='tcp'>
+      <source host='127.0.0.1' mode='bind' service='{{ serial_port }}'/>
+      <target port='0'/>
+      <protocol type='telnet'/>
+      <log file='/var/log/libvirt/qemu/boot-serial-{{ dut_name }}.log' append='on'/>
+    </serial>
+{% for i in range(port_alias|length + 1) %}
+    <interface type='ethernet'>
+      <target dev='{{ dut_name }}-{{ i }}'/>
+      <model type='{{ vm_aarch64_nic_model | default('e1000') }}'/>
+{% if i > 0 %}
+      <mtu size='{{ fp_mtu_size }}'/>
+{% endif %}
+    </interface>
+{% endfor %}
+    <controller type='usb' index='0' model='qemu-xhci'/>
+    <memballoon model='virtio'/>
+    <watchdog model='i6300esb'/>
+  </devices>
+{% if vm_seclabel | default(true) | bool %}
+  <seclabel type='dynamic' model='apparmor' relabel='yes'/>
+{% endif %}
+</domain>
