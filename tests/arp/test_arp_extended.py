@@ -304,9 +304,7 @@ def test_proxy_arp(rand_selected_dut, proxy_arp_enabled, ip_and_intf_info, ptfad
         for table_name, table in running_config.items():
             if "VLAN" in table_name:
                 logger.debug("{}: {}".format(table_name, table))
-        swss_status = rand_selected_dut.shell('docker exec swss supervisorctl status',
-                                              module_ignore_errors=True)['stdout']
-        logger.debug(swss_status)
+        logger.debug(rand_selected_dut.get_process_table("swss"))
         ndppd_conf = rand_selected_dut.shell('docker exec swss cat /etc/ndppd.conf',
                                              module_ignore_errors=True)['stdout']
         logger.debug(ndppd_conf)

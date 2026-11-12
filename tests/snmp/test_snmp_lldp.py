@@ -30,13 +30,12 @@ def collect_lldp_diagnostics(duthost):
          "sonic-db-cli CONFIG_DB KEYS 'MGMT_INTERFACE*'"),
         ("APPL_DB LLDP_LOC_CHASSIS [written by lldp-syncd]",
          "sonic-db-cli APPL_DB HGETALL LLDP_LOC_CHASSIS"),
-        ("lldp docker process status",
-         "docker exec lldp supervisorctl status"),
     ]
     for label, cmd in cmds:
         result = duthost.shell(cmd, module_ignore_errors=True)
         output = result.get('stdout', '').strip() or result.get('stderr', '').strip()
         logger.warning("[{}]: {}".format(label, output if output else "<empty>"))
+    logger.warning("[lldp docker process status]: {}".format(duthost.get_process_table("lldp")))
     logger.warning("=== End LLDP diagnostics ===")
 
 
