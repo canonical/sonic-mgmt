@@ -6,7 +6,7 @@
     host: "{{ item.ManagementIp.split('/')[0] }}"
     port: 22
     state: started
-    search_regex: "OpenSSH_[\\w\\.]+ Debian"
+    search_regex: "OpenSSH_[\\w\\.]+ (Debian|Ubuntu)"
     delay: 10
     timeout: 600
   changed_when: false
