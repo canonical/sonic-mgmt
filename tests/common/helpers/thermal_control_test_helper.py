@@ -180,8 +180,8 @@ def restart_thermal_control_daemon(dut):
         assert len(output["stdout_lines"]
                    ) >= 1, "There should be at least 1 thermalctld process"
 
-    restart_thermalctl_cmd = "docker exec -i pmon bash -c 'supervisorctl restart thermalctld'"
-    output = dut.shell(restart_thermalctl_cmd, module_ignore_errors=True)
+    # rc 1 when pmon does not run thermalctld (vs), under supervisord and pebble alike
+    output = dut.control_container_process("pmon", "restart", ["thermalctld"], module_ignore_errors=True)
     if output["rc"] == 0:
         output = dut.shell(find_thermalctld_pid_cmd)
         assert output["rc"] == 0, "Run command '{}' failed after restart of thermalctld on {}".format(

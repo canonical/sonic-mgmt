@@ -30,8 +30,9 @@ def check_sensord_supported(duthosts, rand_one_dut_hostname):
     if no_sensors_config:
         pytest.skip(f"No sensors.conf for this SKU {duthost.facts['platform']}")
 
-    cmd = 'docker exec pmon supervisorctl status lm-sensors 2>&1 | grep "no such process" > /dev/null'
-    no_sensors_supported = duthost.shell(cmd, module_ignore_errors=True)['rc'] == 0
+    # skip only when pmon was read and has no lm-sensors, as supervisorctl's "no such process" did
+    pmon = duthost.get_process_table("pmon")
+    no_sensors_supported = pmon.running and not pmon.error and pmon.get("lm-sensors", bare=False) is None
     if no_sensors_supported:
         pytest.skip(f"lm-sensors not supported for this SKU {duthost.facts['platform']}")
 
