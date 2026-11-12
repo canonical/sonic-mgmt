@@ -22,6 +22,7 @@ from tests.common.dualtor.data_plane_utils import get_peerhost
 from tests.common.dualtor.dual_tor_utils import show_muxcable_status
 from tests.common.fixtures.duthost_utils import check_bgp_router_id
 from tests.common.utilities import wait_until
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.helpers.dut_ports import get_vlan_interface_list, get_vlan_interface_info
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ class AdvancedReboot:
                                            'service-warm-restart' in kwargs['rebootType']), \
             "Please set rebootType var."
 
-        if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+        if duthost.facts['platform'] in KVM_PLATFORMS:
             # Fast and Warm-reboot procedure now test if "docker exec" works.
             # The timeout for check_docker_exec test is 1s. This timeout is good
             # enough for test in physical devices. However, the KVM devices are
