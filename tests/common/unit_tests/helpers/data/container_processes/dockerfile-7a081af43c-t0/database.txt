@@ -1,0 +1,13 @@
+@@backend@@
+supervisord
+@@critical@@
+program:redis
+program:redis_bmp
+@@status@@
+dependent-startup                EXITED    Nov 10 09:06 PM
+flushdb                          EXITED    Nov 10 09:11 PM
+redis                            RUNNING   pid 60, uptime 0:13:03
+redis_bmp                        RUNNING   pid 61, uptime 0:13:03
+rsyslogd                         RUNNING   pid 105, uptime 0:13:02
+supervisor-proc-exit-listener    RUNNING   pid 116, uptime 0:13:00
+@@end@@

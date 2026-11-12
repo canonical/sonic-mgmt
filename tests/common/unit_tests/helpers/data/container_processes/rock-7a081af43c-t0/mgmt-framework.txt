@@ -1,0 +1,36 @@
+@@backend@@
+pebble
+@@critical-missing@@
+@@services@@
+{"services":{"rest-server":{"name":"rest-server","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:30.73761664Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:30.689058974Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T09:48:31.744434647Z"}}}
+
+@@plan@@
+services:
+    rest-server:
+        override: replace
+        command: /usr/bin/rest-server.sh
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794302391
+@@procs@@
+1 0 1 171941 /usr/bin/pebbleenter
+15 1 15 171951 /usr/sbin/rsyslogd-n-iNONE
+35 1 35 171956 /usr/sbin/rest_server-ui/rest_ui-logtostderr-client_authuser-cert/tmp/cert.pem-key/tmp/key.pem
+@@groups@@
+@@end@@

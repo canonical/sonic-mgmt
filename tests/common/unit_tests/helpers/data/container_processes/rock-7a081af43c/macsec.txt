@@ -1,0 +1,49 @@
+@@backend@@
+pebble
+@@critical@@
+program:macsecmgrd
+@@services@@
+{"services":{"macsecmgrd":{"name":"macsecmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:52:14.563807052Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T08:52:15.926813145Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T08:52:14.51405651Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T08:52:15.842325786Z"}}}
+
+@@plan@@
+services:
+    macsecmgrd:
+        override: replace
+        command: /usr/bin/macsecmgrd
+        on-success: ignore
+        on-failure: shutdown
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794300518
+@@procs@@
+1 0 1 21481 /usr/bin/pebbleenter
+29 1 29 21551 /usr/sbin/rsyslogd-n-iNONE
+41 1 41 21556 /usr/bin/macsecmgrd
+44 1 44 21692 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+@@groups@@
+@@end@@

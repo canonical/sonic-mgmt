@@ -1,0 +1,16 @@
+@@backend@@
+supervisord
+@@critical@@
+program:lldpd
+program:lldp-syncd
+program:lldpmgrd
+@@status@@
+dependent-startup                EXITED    Nov 10 09:08 PM
+lldp-syncd                       RUNNING   pid 38, uptime 0:11:42
+lldpd                            RUNNING   pid 32, uptime 0:11:44
+lldpmgrd                         RUNNING   pid 42, uptime 0:11:40
+rsyslogd                         RUNNING   pid 18, uptime 0:11:47
+start                            EXITED    Nov 10 09:08 PM
+supervisor-proc-exit-listener    RUNNING   pid 23, uptime 0:11:45
+waitfor_lldp_ready               EXITED    Nov 10 09:08 PM
+@@end@@

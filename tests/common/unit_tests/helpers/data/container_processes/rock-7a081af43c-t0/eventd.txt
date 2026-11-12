@@ -1,0 +1,49 @@
+@@backend@@
+pebble
+@@critical@@
+program:eventd
+@@services@@
+{"services":{"eventd":{"name":"eventd","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:22.679745013Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:23.610605171Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:22.590765746Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T09:48:23.784580916Z"}}}
+
+@@plan@@
+services:
+    eventd:
+        override: replace
+        command: /usr/bin/eventd
+        on-success: ignore
+        on-failure: shutdown
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794302391
+@@procs@@
+1 0 1 171119 /usr/bin/pebbleenter
+16 1 16 171141 /usr/sbin/rsyslogd-n-iNONE
+34 1 34 171150 /usr/bin/eventd
+52 1 52 171243 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+@@groups@@
+@@end@@

@@ -1,0 +1,105 @@
+@@backend@@
+pebble
+@@critical@@
+group:dhcp-relay
+@@services@@
+{"services":{"dhcprelayd":{"name":"dhcprelayd","startup":"disabled","current":"active","current-since":"2026-11-10T08:52:17.074533851Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T08:52:17.359212644Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T08:52:16.318824932Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T08:52:18.087117159Z"}}}
+
+@@plan@@
+services:
+    dhcprelayd:
+        override: replace
+        command: /usr/bin/dhcprelayd
+        on-success: ignore
+        on-failure: shutdown
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794300518
+@@procs@@
+1 0 1 21703 /usr/bin/pebbleenter
+15 1 15 21731 /usr/sbin/rsyslogd-n-iNONE
+48 1 48 21807 /usr/bin/python3/usr/bin/dhcprelayd
+50 1 50 21835 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+@@groups@@
+[supervisord]
+logfile_maxbytes=1MB
+logfile_backups=2
+nodaemon=true
+
+[eventlistener:dependent-startup]
+command=python3 -m supervisord_dependent_startup
+autostart=true
+autorestart=unexpected
+startretries=0
+exitcodes=0,3
+events=PROCESS_STATE
+buffer_size=1024
+
+[eventlistener:supervisor-proc-exit-listener]
+command=/usr/bin/supervisor-proc-exit-listener-rs --container-name dhcp_relay
+events=PROCESS_STATE_EXITED,PROCESS_STATE_RUNNING
+autostart=true
+autorestart=unexpected
+buffer_size=1024
+
+[program:rsyslogd]
+command=/usr/sbin/rsyslogd -n -iNONE
+priority=1
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+
+[program:start]
+command=/usr/bin/start.sh
+priority=2
+autostart=false
+autorestart=false
+startsecs=0
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=rsyslogd:running
+
+[program:dhcprelayd]
+command=/usr/local/bin/dhcprelayd
+priority=3
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=start:exited
+@@end@@

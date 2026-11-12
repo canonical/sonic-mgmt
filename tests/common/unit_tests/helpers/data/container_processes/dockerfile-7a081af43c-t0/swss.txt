@@ -1,0 +1,44 @@
+@@backend@@
+supervisord
+@@critical@@
+program:orchagent
+program:portsyncd
+program:neighsyncd
+program:fdbsyncd
+program:vlanmgrd
+program:intfmgrd
+program:portmgrd
+program:fabricmgrd
+program:buffermgrd
+program:vrfmgrd
+program:nbrmgrd
+program:vxlanmgrd
+program:coppmgrd
+program:tunnelmgrd
+@@status@@
+arp_update                       RUNNING   pid 127, uptime 0:13:46
+buffermgrd                       RUNNING   pid 141, uptime 0:13:46
+coppmgrd                         RUNNING   pid 103, uptime 0:13:51
+countersyncd                     RUNNING   pid 190, uptime 0:13:46
+dependent-startup                EXITED    Nov 10 09:07 PM
+enable_counters                  EXITED    Nov 10 09:09 PM
+fabricmgrd                       RUNNING   pid 135, uptime 0:13:46
+fdbsyncd                         RUNNING   pid 169, uptime 0:13:46
+gearsyncd                        EXITED    Nov 10 09:06 PM
+intfmgrd                         RUNNING   pid 134, uptime 0:13:46
+nbrmgrd                          RUNNING   pid 157, uptime 0:13:46
+ndppd                            RUNNING   pid 419, uptime 0:13:45
+neighsyncd                       RUNNING   pid 128, uptime 0:13:46
+orchagent                        RUNNING   pid 56, uptime 0:13:53
+portmgrd                         RUNNING   pid 138, uptime 0:13:46
+portsyncd                        RUNNING   pid 51, uptime 0:13:54
+restore_neighbors                EXITED    Nov 10 09:06 PM
+rsyslogd                         RUNNING   pid 42, uptime 0:13:57
+supervisor-proc-exit-listener    RUNNING   pid 47, uptime 0:13:54
+swssconfig                       EXITED    Nov 10 09:06 PM
+tunnelmgrd                       RUNNING   pid 177, uptime 0:13:46
+vlanmgrd                         RUNNING   pid 133, uptime 0:13:46
+vrfmgrd                          RUNNING   pid 148, uptime 0:13:46
+vxlanmgrd                        RUNNING   pid 162, uptime 0:13:46
+wait_for_link                    EXITED    Nov 10 09:06 PM
+@@end@@

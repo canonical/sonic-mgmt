@@ -1,0 +1,55 @@
+@@backend@@
+pebble
+@@critical@@
+program:radvd
+@@services@@
+{"services":{"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:21.730571163Z"},"radvd":{"name":"radvd","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:22.983236319Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:20.676058537Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T09:48:23.992939307Z"},"wait_for_link":{"name":"wait_for_link","startup":"disabled","current":"inactive","current-since":"2026-11-10T09:48:28.979716264Z"}}}
+
+@@plan@@
+services:
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    radvd:
+        override: replace
+        command: /usr/sbin/radvd -n
+        on-success: ignore
+        on-failure: shutdown
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+    wait_for_link:
+        override: replace
+        command: /usr/bin/wait_for_link.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794302391
+@@procs@@
+1 0 1 170931 /usr/bin/pebbleenter
+16 1 16 170949 /usr/sbin/rsyslogd-n-iNONE
+44 1 44 171055 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+93 1 93 171179 /usr/sbin/radvd-n
+94 93 93 171181 /usr/sbin/radvd-n
+@@groups@@
+@@end@@
