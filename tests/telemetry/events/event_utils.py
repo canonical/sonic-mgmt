@@ -70,7 +70,7 @@ def check_monit_running(duthost):
 
 
 def event_publish_tool(duthost, json_file='', count=1):
-    cmd = "docker exec eventd python /usr/bin/events_publish_tool.py"
+    cmd = "docker exec eventd python3 /usr/bin/events_publish_tool.py"
     if json_file == '':
         cmd += " -c {}".format(count)
     else:
@@ -120,12 +120,11 @@ def find_test_vlan(duthost):
     dhc6relay process name, ipv6 address, and member interfaces
     """
     vlan_brief = duthost.get_vlan_brief()
+    programs = [process.full_name for process in duthost.get_process_table("dhcp_relay").processes]
     for vlan in vlan_brief:
         # Find dhcrelay process
-        dhcrelay_process = duthost.shell("docker exec dhcp_relay supervisorctl status \
-                                         | grep isc-dhcpv4-relay-%s | awk '{print $1}'" % vlan)['stdout']
-        dhcp6relay_process = duthost.shell("docker exec dhcp_relay supervisorctl status \
-                                           | grep dhcp6relay | awk '{print $1}'")['stdout']
+        dhcrelay_process = "\n".join(p for p in programs if "isc-dhcpv4-relay-%s" % vlan in p)
+        dhcp6relay_process = "\n".join(p for p in programs if "dhcp6relay" in p)
         interface_ipv4 = vlan_brief[vlan]['interface_ipv4']
         interface_ipv6 = vlan_brief[vlan]['interface_ipv6']
         members = vlan_brief[vlan]['members']

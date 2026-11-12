@@ -1,0 +1,53 @@
+@@backend@@
+pebble
+@@critical@@
+program:sflowmgrd
+@@services@@
+{"services":{"port_index_mapper":{"name":"port_index_mapper","startup":"disabled","current":"active","current-since":"2026-11-10T08:52:13.356660835Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T08:52:13.018673825Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T08:52:10.821925383Z"},"sflowmgrd":{"name":"sflowmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:52:11.112061365Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T08:52:14.459828088Z"}}}
+
+@@plan@@
+services:
+    port_index_mapper:
+        override: replace
+        command: /usr/bin/port_index_mapper.py
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    sflowmgrd:
+        override: replace
+        command: /usr/bin/sflowmgrd
+        on-success: ignore
+        on-failure: shutdown
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794300518
+@@procs@@
+1 0 1 21065 /usr/bin/pebbleenter
+29 1 29 21181 /usr/sbin/rsyslogd-n-iNONE
+40 1 40 21211 /usr/bin/sflowmgrd
+48 1 48 21401 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+51 1 51 21435 python3/usr/bin/port_index_mapper.py
+@@groups@@
+@@end@@

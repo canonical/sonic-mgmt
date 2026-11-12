@@ -1,0 +1,64 @@
+@@backend@@
+pebble
+@@critical@@
+program:teammgrd
+program:teamsyncd
+program:tlm_teamd
+@@services@@
+{"services":{"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T08:48:57.449669891Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T08:48:56.403655974Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T08:48:59.836676074Z"},"teammgrd":{"name":"teammgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:56.658117429Z"},"teamsyncd":{"name":"teamsyncd","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:57.764310015Z"},"tlm_teamd":{"name":"tlm_teamd","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:58.823130071Z"}}}
+
+@@plan@@
+services:
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+    teammgrd:
+        override: replace
+        command: /usr/bin/teammgrd
+        on-success: ignore
+        on-failure: shutdown
+        kill-delay: 1m0s
+    teamsyncd:
+        override: replace
+        command: /usr/bin/teamsyncd
+        on-success: ignore
+        on-failure: shutdown
+    tlm_teamd:
+        override: replace
+        command: /usr/bin/tlm_teamd
+        on-success: ignore
+        on-failure: shutdown
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794300518
+@@procs@@
+1 0 1 1544 /usr/bin/pebbleenter
+30 1 30 1740 /usr/sbin/rsyslogd-n-iNONE
+43 1 43 1765 /usr/bin/teammgrd
+46 1 46 1844 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+54 1 54 1876 /usr/bin/teamsyncd
+65 1 65 1982 /usr/bin/tlm_teamd
+@@groups@@
+@@end@@

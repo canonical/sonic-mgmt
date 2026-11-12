@@ -1,0 +1,91 @@
+@@backend@@
+pebble
+@@critical@@
+program:zebra
+program:staticd
+program:bgpd
+program:fpmsyncd
+program:bgpcfgd
+@@services@@
+{"services":{"bgpcfgd":{"name":"bgpcfgd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:04.367281829Z"},"bgpd":{"name":"bgpd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:02.194916429Z"},"bgpmon":{"name":"bgpmon","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:05.418279434Z"},"fpmsyncd":{"name":"fpmsyncd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:03.312900392Z"},"mgmtd":{"name":"mgmtd","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:59.024543404Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T08:48:57.995121123Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T08:48:56.949696669Z"},"sharpd":{"name":"sharpd","startup":"disabled","current":"inactive"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T08:49:06.455492781Z"},"staticd":{"name":"staticd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:01.147249386Z"},"zebra":{"name":"zebra","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:00.067008654Z"}}}
+
+@@plan@@
+services:
+    bgpcfgd:
+        override: replace
+        command: /usr/bin/bgpcfgd
+        on-success: ignore
+        on-failure: shutdown
+    bgpd:
+        override: replace
+        command: /usr/lib/frr/bgpd -A 127.0.0.1 -P 0 -M snmp
+        on-success: ignore
+        on-failure: shutdown
+        kill-delay: 0s
+    bgpmon:
+        override: replace
+        command: /usr/bin/bgpmon
+        on-failure: restart
+    fpmsyncd:
+        override: replace
+        command: fpmsyncd
+        on-success: ignore
+        on-failure: shutdown
+    mgmtd:
+        override: replace
+        command: /usr/lib/frr/mgmtd -A 127.0.0.1 -P 0
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    sharpd:
+        override: replace
+        command: /usr/lib/frr/sharpd -A 127.0.0.1 -P 0
+        kill-delay: 0s
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+    staticd:
+        override: replace
+        command: /usr/lib/frr/staticd -A 127.0.0.1 -P 0
+        on-success: ignore
+        on-failure: shutdown
+    zebra:
+        override: replace
+        command: /usr/lib/frr/zebra -A 127.0.0.1 -s 90000000 -M dplane_fpm_sonic -M snmp --asic-offload=notify_on_offload
+        on-success: ignore
+        on-failure: shutdown
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794300518
+@@procs@@
+1 0 1 1767 /usr/bin/pebbleenter
+109 1 109 2319 /usr/lib/frr/bgpd-A127.0.0.1-P0-Msnmp
+15 1 15 1794 /usr/sbin/rsyslogd-n-iNONE
+155 1 155 2431 fpmsyncd
+177 1 177 2536 /usr/bin/python3/usr/bin/bgpcfgd
+228 1 228 2641 /usr/bin/python3/usr/bin/bgpmon
+30 1 30 1899 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+70 1 70 2002 /usr/lib/frr/mgmtd-A127.0.0.1-P0
+78 1 78 2106 /usr/lib/frr/zebra-A127.0.0.1-s90000000-Mdplane_fpm_sonic-Msnmp--asic-offload=notify_on_offload
+99 1 99 2214 /usr/lib/frr/staticd-A127.0.0.1-P0
+@@groups@@
+@@end@@

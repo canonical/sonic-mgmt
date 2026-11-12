@@ -22,6 +22,8 @@ except ImportError:
 from tests.common.devices.base import AnsibleHostBase
 from tests.common.devices.constants import ACL_COUNTERS_UPDATE_INTERVAL_IN_SEC
 from tests.common.helpers.dut_utils import is_supervisor_node, is_macsec_capable_node
+from tests.common.helpers import container_processes
+from tests.common.helpers.os_profile import os_profile_command, parse_os_profile_output
 from tests.common.utilities import get_host_visible_vars, wait_until
 from tests.common.cache import cached
 from tests.common.helpers.constants import DEFAULT_ASIC_ID, DEFAULT_NAMESPACE
@@ -506,110 +508,81 @@ class SonicHost(AnsibleHostBase):
         # Return the final retried result
         return retry
 
+    def get_process_table(self, container):
+        """
+        @summary: Read the programs of a container, whether supervisord or pebble runs them
+        @return: A container_processes.ContainerProcesses
+        """
+        cmd = container_processes.build_probe_command(container)
+        result = self.shell(cmd, module_ignore_errors=True, verbose=False)
+        result = self._retry_if_oci_exec_race(cmd, result)
+        return container_processes.parse_probe_output(container, result["rc"], result["stdout"],
+                                                      allow_bare_critical='201811' in self._os_version)
+
+    def get_process_tables(self, containers):
+        """
+        @summary: get_process_table() for several containers, run in one batch
+        @return: A dictionary of container name to container_processes.ContainerProcesses
+        """
+        # shell_cmds ignores its timeout for commands with a single quote, so each probe carries its own
+        cmds = [container_processes.build_probe_command(container, timeout=60) for container in containers]
+        results = self.shell_cmds(cmds=cmds, continue_on_fail=True, module_ignore_errors=True, timeout=60)['results']
+        tables = {}
+        # Match results by position: the batch may rewrite the command string
+        for container, cmd, result in zip(containers, cmds, results):
+            result = self._retry_if_oci_exec_race(cmd, result)
+            tables[container] = container_processes.parse_probe_output(
+                container, result["rc"], result["stdout"], allow_bare_critical='201811' in self._os_version)
+        return tables
+
+    def control_container_process(self, container, action, names, module_ignore_errors=False):
+        """
+        @summary: Start, stop or restart programs of a container, whether supervisord or pebble runs them
+        @param names: Program names; a supervisord group prefix ('group:program') is accepted
+        """
+        return self.shell(container_processes.build_control_command(container, action, names),
+                          module_ignore_errors=module_ignore_errors)
+
+    def signal_container_process(self, container, signal, names, module_ignore_errors=False):
+        """
+        @summary: Send a signal ('SIGHUP' or 'HUP') to programs of a container, whether supervisord or pebble runs them
+        """
+        return self.shell(container_processes.build_signal_command(container, signal, names),
+                          module_ignore_errors=module_ignore_errors)
+
+    def os_profile(self, container=None):
+        """
+        @summary: Operating system of the host, or of a container when one is given
+        @return: An os_profile.OsProfile; the host result is cached
+        """
+        if container is None and getattr(self, "_os_profile", None) is not None:
+            return self._os_profile
+        profile = parse_os_profile_output(self.shell(os_profile_command(container))["stdout"])
+        if container is None:
+            self._os_profile = profile
+        return profile
+
+    def _critical_lists(self, table, container_name):
+        critical_group_list = list(table.critical_groups)
+        critical_process_list = list(table.critical_programs)
+        succeeded = table.critical_parse_ok
+        # For PMon container, since different daemons are enabled in different platforms, we need find common processes
+        # which are not only in the critical_processes file and also are configured to run on that platform.
+        if succeeded and container_name == "pmon":
+            running = [process for process in table.processes if process.state == "RUNNING"]
+            critical_group_list = [process.name for process in running
+                                   if process.group is not None and process.group in critical_group_list]
+            critical_process_list = [process.name for process in running
+                                     if process.group is None and process.name in critical_process_list]
+        return critical_group_list, critical_process_list, succeeded
+
     def get_critical_group_and_process_lists(self, container_name):
         """
         @summary: Get critical group and process lists by parsing the
                   critical_processes file in the specified container
         @return: Two lists which include the critical groups and critical processes respectively
         """
-        critical_group_list = []
-        critical_process_list = []
-        succeeded = True
-
-        cmd = "docker exec {} bash -c '[ -f /etc/supervisor/critical_processes ] \
-                && cat /etc/supervisor/critical_processes'".format(container_name)
-        file_content = self.shell(cmd, module_ignore_errors=True)
-        file_content = self._retry_if_oci_exec_race(cmd, file_content)
-        for line in file_content["stdout_lines"]:
-            line_info = line.strip().split(':')
-            if len(line_info) != 2:
-                if '201811' in self._os_version and len(line_info) == 1:
-                    identifier_value = line_info[0].strip()
-                    critical_process_list.append(identifier_value)
-                    continue
-
-                succeeded = False
-                break
-
-            identifier_key = line_info[0].strip()
-            identifier_value = line_info[1].strip()
-            if identifier_key == "group" and identifier_value:
-                critical_group_list.append(identifier_value)
-            elif identifier_key == "program" and identifier_value:
-                critical_process_list.append(identifier_value)
-            else:
-                succeeded = False
-                break
-
-        # For PMon container, since different daemons are enabled in different platforms, we need find common processes
-        # which are not only in the critical_processes file and also are configured to run on that platform.
-        if succeeded and container_name == "pmon":
-            expected_critical_group_list = []
-            expected_critical_process_list = []
-            process_list = self.shell("docker exec {} supervisorctl status"
-                                      .format(container_name), module_ignore_errors=True)
-            for process_info in process_list["stdout_lines"]:
-                process_name = process_info.split()[0].strip()
-                process_status = process_info.split()[1].strip()
-                if ":" in process_name:
-                    group_name = process_name.split(":")[0]
-                    process_name = process_name.split(":")[1]
-                    if process_status == "RUNNING" and group_name in critical_group_list:
-                        expected_critical_group_list.append(process_name)
-                else:
-                    if process_status == "RUNNING" and process_name in critical_process_list:
-                        expected_critical_process_list.append(process_name)
-
-            critical_group_list = expected_critical_group_list
-            critical_process_list = expected_critical_process_list
-
-        return critical_group_list, critical_process_list, succeeded
-
-    def critical_group_process(self):
-        # Get critical group and process definitions by running cmds in batch to save overhead
-        cmds = []
-        for service in self.critical_services:
-            cmd = 'docker exec {} bash -c "[ -f /etc/supervisor/critical_processes ]' \
-                  ' && cat /etc/supervisor/critical_processes"'.format(service)
-
-            cmds.append(cmd)
-        results = self.shell_cmds(cmds=cmds, continue_on_fail=True, module_ignore_errors=True, timeout=30)['results']
-
-        # Re-run any commands hit by the transient `docker exec` runc-setns race.
-        # The target container is still running; only the new exec failed.
-        results = [self._retry_if_oci_exec_race(res['cmd'], res) for res in results]
-
-        # Extract service name of each command result, transform results list to a dict keyed by service name
-        service_results = {}
-        for res in results:
-            service = res['cmd'].split()[2]
-            service_results[service] = res
-
-        # Parse critical group and service definition of all services
-        group_process_results = {}
-        for service in self.critical_services:
-            if service not in service_results or service_results[service]['rc'] != 0:
-                continue
-
-            service_group_process = {'groups': [], 'processes': []}
-
-            file_content = service_results[service]['stdout_lines']
-            for line in file_content:
-                line_info = line.strip().split(':')
-                if len(line_info) != 2:
-                    if '201811' in self._os_version and len(line_info) == 1:
-                        process_name = line_info[0].strip()
-                        service_group_process['processes'].append(process_name)
-                else:
-                    group_or_process = line_info[0].strip()
-                    group_process_name = line_info[1].strip()
-                    if group_or_process == 'group' and group_process_name:
-                        service_group_process['groups'].append(group_process_name)
-                    elif group_or_process == 'program' and group_process_name:
-                        service_group_process['processes'].append(group_process_name)
-            group_process_results[service] = service_group_process
-
-        return group_process_results
+        return self._critical_lists(self.get_process_table(container_name), container_name)
 
     def critical_processes_running(self, service):
         """
@@ -638,93 +611,22 @@ class SonicHost(AnsibleHostBase):
             return result
 
         # get critical group and process lists for the service
-        critical_group_list, critical_process_list, succeeded = self.get_critical_group_and_process_lists(service)
+        table = self.get_process_table(service)
+        critical_group_list, critical_process_list, succeeded = self._critical_lists(table, service)
         if succeeded is False:
             result['status'] = False
             return result
 
-        # get process status for the service
-        output = self.command("docker exec {} supervisorctl status".format(service), module_ignore_errors=True)
-        logging.info("====== supervisor process status for service {} ======".format(service))
-
-        return self.parse_service_status_and_critical_process(
-            service_result=output,
-            critical_group_list=critical_group_list,
-            critical_process_list=critical_process_list
-        )
+        logging.info("====== process status for service {} ({}) ======".format(service, table.backend))
+        return container_processes.critical_process_status(table, critical_group_list, critical_process_list)
 
     def all_critical_process_status(self):
         """
         @summary: Check whether all critical processes status for all critical services
         """
-        # Get critical process definition of all services
-        group_process_results = self.critical_group_process()
-
-        # Get process status of all services. Run cmds in batch to save overhead
-        cmds = []
-        for service in self.critical_services:
-            cmd = 'docker exec {} supervisorctl status'.format(service)
-            cmds.append(cmd)
-        results = self.shell_cmds(cmds=cmds, continue_on_fail=True, module_ignore_errors=True, timeout=60)['results']
-
-        # Re-run any commands hit by the transient `docker exec` runc-setns race
-        # before we let the result feed parse_service_status_and_critical_process,
-        # which would otherwise see one garbage "OCI runtime exec failed..." line
-        # and flip the service to status=False even though the container is up.
-        results = [self._retry_if_oci_exec_race(res['cmd'], res) for res in results]
-
-        # Extract service name of each command result, transform results list to a dict keyed by service name
-        service_results = {}
-        for res in results:
-            service = res['cmd'].split()[2]
-            service_results[service] = res
-
-        # Parse critical process status of all services
-        all_critical_process = {}
-        for service in self.critical_services:
-            service_critical_process = {
-                'status': True,
-                'exited_critical_process': [],
-                'running_critical_process': []
-            }
-            if service not in group_process_results:
-                # Container may have started between the critical_processes
-                # file read and the supervisorctl status batch. Retry reading
-                # the critical_processes file for this specific service.
-                if (service in service_results
-                        and service_results[service].get('stdout_lines')):
-                    logging.info(
-                        "Service '%s' was not available during initial "
-                        "critical_processes batch read, retrying.", service
-                    )
-                    critical_group_list, critical_process_list, succeeded = \
-                        self.get_critical_group_and_process_lists(service)
-                    if succeeded:
-                        group_process_results[service] = {
-                            'groups': critical_group_list,
-                            'processes': critical_process_list
-                        }
-                    else:
-                        service_critical_process['status'] = False
-                        all_critical_process[service] = service_critical_process
-                        continue
-                else:
-                    service_critical_process['status'] = False
-                    all_critical_process[service] = service_critical_process
-                    continue
-
-            if service not in service_results:
-                service_critical_process['status'] = False
-                all_critical_process[service] = service_critical_process
-                continue
-
-            all_critical_process[service] = self.parse_service_status_and_critical_process(
-                service_result=service_results[service],
-                critical_group_list=group_process_results[service]['groups'],
-                critical_process_list=group_process_results[service]['processes']
-            )
-
-        return all_critical_process
+        tables = self.get_process_tables(self.critical_services)
+        return {service: container_processes.critical_process_status(tables[service], strict=False)
+                for service in self.critical_services}
 
     def parse_service_status_and_critical_process(self, service_result, critical_group_list,
                                                   critical_process_list):
@@ -883,23 +785,19 @@ class SonicHost(AnsibleHostBase):
 
     def start_pmon_daemon(self, daemon_name):
         """
-        @summary: start daemon in pmon docker using supervisorctl start command.
+        @summary: start daemon in pmon docker.
         """
-        pmon_daemon_start_cmd = "docker exec pmon supervisorctl start {}".format(daemon_name)
-
-        self.shell(pmon_daemon_start_cmd, module_ignore_errors=True)
+        self.control_container_process("pmon", "start", [daemon_name], module_ignore_errors=True)
 
     def stop_pmon_daemon_service(self, daemon_name):
         """
-        @summary: stop daemon in pmon docker using supervisorctl stop command.
+        @summary: stop daemon in pmon docker.
         """
-        pmon_daemon_stop_cmd = "docker exec pmon supervisorctl stop {}".format(daemon_name)
-
-        self.shell(pmon_daemon_stop_cmd, module_ignore_errors=True)
+        self.control_container_process("pmon", "stop", [daemon_name], module_ignore_errors=True)
 
     def get_pmon_daemon_status(self, daemon_name):
         """
-        @summary: get daemon status in pmon docker using supervisorctl status command.
+        @summary: get daemon status in pmon docker.
 
         @return: daemon_status - "RUNNING"/"STOPPED"/"EXITED"
                  daemon_pid - integer number
@@ -907,12 +805,11 @@ class SonicHost(AnsibleHostBase):
         daemon_status = None
         daemon_pid = -1
 
-        daemon_info = self.shell("docker exec pmon supervisorctl status {}"
-                                 .format(daemon_name), module_ignore_errors=True)["stdout"]
-        if daemon_info.find(daemon_name) != -1:
-            daemon_status = daemon_info.split()[1].strip()
+        daemon = self.get_process_table("pmon").get(daemon_name, bare=False)
+        if daemon is not None:
+            daemon_status = daemon.state
             if daemon_status == "RUNNING":
-                daemon_pid = int(daemon_info.split()[3].strip(','))
+                daemon_pid = daemon.pid
 
         logging.info("Daemon '{}' in the '{}' state with pid {}".format(daemon_name, daemon_status, daemon_pid))
 
@@ -950,9 +847,9 @@ class SonicHost(AnsibleHostBase):
         # some services are meant to have a short life span or not part of the daemons
         exemptions = ['lm-sensors', 'start.sh', 'rsyslogd', 'start', 'dependent-startup', 'chassis_db_init', 'delay']
 
-        daemons = self.shell('docker exec pmon supervisorctl status', module_ignore_errors=True)['stdout_lines']
+        daemons = self.get_process_table("pmon").processes
 
-        daemon_list = [line.strip().split()[0] for line in daemons if len(line.strip()) > 0]
+        daemon_list = [daemon.full_name for daemon in daemons]
 
         daemon_ctl_key_prefix = 'skip_'
         daemon_config_file_path = os.path.join('/usr/share/sonic/device',
@@ -980,10 +877,9 @@ class SonicHost(AnsibleHostBase):
 
         # Collect state of services that are not on the exemption list.
         daemon_states = {}
-        for line in daemons:
-            words = line.strip().split()
-            if len(words) >= 2 and words[0] not in exemptions:
-                daemon_states[words[0]] = words[1]
+        for daemon in daemons:
+            if daemon.full_name not in exemptions:
+                daemon_states[daemon.full_name] = daemon.state
 
         logging.info("Pmon daemon state list for this platform is %s" % str(daemon_states))
         return daemon_states
@@ -2249,18 +2145,14 @@ Totals               6450                 6449
         Returns:
             True or False
         """
-        service_status = self.command(
-            "docker exec {} supervisorctl status {}".format(
-                docker_name, service_name
-            ),
-            module_ignore_errors=True
-        )["stdout"]
+        service = self.get_process_table(docker_name).get(service_name, bare=False)
+        service_status = service.state if service is not None else None
 
         logging.info("service {}:{} status: {} ".format(
             docker_name, service_name, service_status)
         )
 
-        return "RUNNING" in service_status
+        return service_status == "RUNNING"
 
     def get_up_ip_ports(self):
         """
@@ -2944,7 +2836,7 @@ Totals               6450                 6449
         bgp_names = self.get_bgp_docker_names()
         for bgp_name in bgp_names:
             try:
-                result = self.command(f"sudo docker exec {bgp_name} supervisorctl stop bgpd")
+                result = self.control_container_process(bgp_name, "stop", ["bgpd"])
                 if result['rc'] == 0:
                     logging.info("Successfully stopped bgpd process on {}".format(self.hostname))
                 else:
@@ -2960,14 +2852,14 @@ Totals               6450                 6449
         frr_config_mode = self.get_frr_mgmt_framework_config()
         for bgp_name in bgp_names:
             try:
-                result = self.command(f"sudo docker exec {bgp_name} supervisorctl start bgpd")
+                result = self.control_container_process(bgp_name, "start", ["bgpd"])
                 if result['rc'] != 0:
                     logging.error(f"Failed to start bgpd process on {self.hostname}: {result['stderr']}")
                     return result
                 # restart bgpcfgd to apply back config (for non frr-mgmt-framework mode)
                 if frr_config_mode is False:
                     time.sleep(10)
-                    result = self.command(f"docker exec {bgp_name} supervisorctl restart bgpcfgd")
+                    result = self.control_container_process(bgp_name, "restart", ["bgpcfgd"])
                     if result['rc'] != 0:
                         logging.error(f"Failed to restart bgpcfgd on {self.hostname}: {result['stderr']}")
                         return result

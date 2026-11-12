@@ -540,24 +540,22 @@ def _restart_gnoi_server(duthost):
         raise Exception("The 'gnmi' container does not exist.")
 
     # Restart gnmi-native process to pick up new configuration
-    result = duthost.shell("docker exec gnmi supervisorctl restart gnmi-native", module_ignore_errors=True)
+    result = duthost.control_container_process("gnmi", "restart", ["gnmi-native"], module_ignore_errors=True)
 
     if result['rc'] != 0:
         raise Exception(f"Failed to restart gnmi-native: {result['stderr']}")
 
     # Wait for supervisor to report RUNNING as a guard against immediate
     # crash loops.
+    def _gnmi_native():
+        return duthost.get_process_table("gnmi").get("gnmi-native", bare=False)
+
     def _supervisor_running():
-        status = duthost.shell("docker exec gnmi supervisorctl status gnmi-native",
-                               module_ignore_errors=True)
-        return "RUNNING" in status.get('stdout', '')
+        program = _gnmi_native()
+        return program is not None and program.state == "RUNNING"
 
     if not wait_until(30, 1, 0, _supervisor_running):
-        status = duthost.shell("docker exec gnmi supervisorctl status gnmi-native",
-                               module_ignore_errors=True)
-        raise Exception(
-            f"gnmi-native failed to reach RUNNING within 30s: {status.get('stdout', '')}"
-        )
+        raise Exception(f"gnmi-native failed to reach RUNNING within 30s: {_gnmi_native()}")
 
     # Supervisor can report RUNNING before telemetry binds its TLS listener,
     # especially on slower platforms. Do not return until callers can safely

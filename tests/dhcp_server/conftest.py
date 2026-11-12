@@ -40,17 +40,13 @@ def is_dhcprelayd_running(duthost):
 
     This function tries both naming conventions to handle either state.
     """
-    # Try group format first (normal production state)
-    result = duthost.shell(
-        "docker exec {} supervisorctl status dhcp-relay:dhcprelayd".format(DHCP_RELAY_CONTAINER_NAME),
-        module_ignore_errors=True)
-    if "RUNNING" in result.get("stdout", ""):
-        return True
-    # Fall back to standalone format (after test fixture modifies CONFIG_DB)
-    result = duthost.shell(
-        "docker exec {} supervisorctl status dhcprelayd".format(DHCP_RELAY_CONTAINER_NAME),
-        module_ignore_errors=True)
-    return "RUNNING" in result.get("stdout", "")
+    table = duthost.get_process_table(DHCP_RELAY_CONTAINER_NAME)
+    # group format (normal production state), then standalone (after a test fixture modifies CONFIG_DB)
+    for name in ("dhcp-relay:dhcprelayd", "dhcprelayd"):
+        program = table.get(name, bare=False)
+        if program is not None and program.state == "RUNNING":
+            return True
+    return False
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -64,7 +60,8 @@ def dhcp_server_setup_teardown(duthost):
         duthost.critical_services_tracking_list()
 
     def is_supervisor_subprocess_running(duthost, container_name, app_name):
-        return "RUNNING" in duthost.shell(f"docker exec {container_name} supervisorctl status {app_name}")["stdout"]
+        program = duthost.get_process_table(container_name).get(app_name, bare=False)
+        return program is not None and program.state == "RUNNING"
 
     py_assert(
         wait_until(120, 1, 1,

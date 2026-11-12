@@ -1,0 +1,53 @@
+@@backend@@
+pebble
+@@critical@@
+
+@@services@@
+{"services":{"chassis_db_init":{"name":"chassis_db_init","startup":"disabled","current":"error","current-since":"2026-11-10T09:48:31.996957559Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:32.484717865Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:31.457000349Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T09:48:33.129728036Z"},"stormond":{"name":"stormond","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:32.076946609Z"}}}
+
+@@plan@@
+services:
+    chassis_db_init:
+        override: replace
+        command: /usr/bin/chassis_db_init
+        on-success: ignore
+        on-failure: ignore
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+    stormond:
+        override: replace
+        command: /usr/bin/stormond
+        on-success: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794302391
+@@procs@@
+1 0 1 172020 /usr/bin/pebbleenter
+110 1 110 172089 /usr/bin/python3/usr/bin/stormond
+111 1 111 172130 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+14 1 14 172027 /usr/sbin/rsyslogd-n-iNONE
+@@groups@@
+@@end@@

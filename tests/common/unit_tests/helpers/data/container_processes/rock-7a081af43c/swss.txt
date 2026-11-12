@@ -1,0 +1,151 @@
+@@backend@@
+pebble
+@@critical@@
+program:orchagent
+program:portsyncd
+program:neighsyncd
+program:fdbsyncd
+program:vlanmgrd
+program:intfmgrd
+program:portmgrd
+program:fabricmgrd
+program:buffermgrd
+program:vrfmgrd
+program:nbrmgrd
+program:vxlanmgrd
+program:coppmgrd
+program:tunnelmgrd
+@@services@@
+{"services":{"buffermgrd":{"name":"buffermgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:08.457001418Z"},"coppmgrd":{"name":"coppmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:57.764000939Z"},"countersyncd":{"name":"countersyncd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:15.810983755Z"},"enable_counters":{"name":"enable_counters","startup":"disabled","current":"inactive","current-since":"2026-11-10T08:52:09.558320621Z"},"fabricmgrd":{"name":"fabricmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:07.403375904Z"},"fdbsyncd":{"name":"fdbsyncd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:14.750922991Z"},"intfmgrd":{"name":"intfmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:05.306693175Z"},"nbrmgrd":{"name":"nbrmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:11.611465569Z"},"neighsyncd":{"name":"neighsyncd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:03.118278648Z"},"orchagent":{"name":"orchagent","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:56.651317372Z"},"portmgrd":{"name":"portmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:06.358371891Z"},"portsyncd":{"name":"portsyncd","startup":"disabled","current":"active","current-since":"2026-11-10T08:48:55.211714942Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T08:48:54.146687014Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T08:48:53.063677464Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T08:49:16.831046683Z"},"tunnelmgrd":{"name":"tunnelmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:13.703367551Z"},"vlanmgrd":{"name":"vlanmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:04.25747112Z"},"vrfmgrd":{"name":"vrfmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:10.566087385Z"},"vxlanmgrd":{"name":"vxlanmgrd","startup":"disabled","current":"active","current-since":"2026-11-10T08:49:12.656781545Z"}}}
+
+@@plan@@
+services:
+    buffermgrd:
+        override: replace
+        command: /usr/bin/buffermgrd.sh
+        on-success: ignore
+        on-failure: shutdown
+    coppmgrd:
+        override: replace
+        command: /usr/bin/coppmgrd
+        on-success: ignore
+        on-failure: shutdown
+    countersyncd:
+        override: replace
+        command: /usr/bin/countersyncd --enable-otel
+        on-success: ignore
+    enable_counters:
+        override: replace
+        command: /usr/bin/enable_counters.py
+        on-success: ignore
+        on-failure: ignore
+    fabricmgrd:
+        override: replace
+        command: /usr/bin/fabricmgrd
+        on-success: ignore
+        on-failure: shutdown
+    fdbsyncd:
+        override: replace
+        command: /usr/bin/fdbsyncd
+        on-success: ignore
+        on-failure: shutdown
+    intfmgrd:
+        override: replace
+        command: /usr/bin/intfmgrd
+        on-success: ignore
+        on-failure: shutdown
+    nbrmgrd:
+        override: replace
+        command: /usr/bin/nbrmgrd
+        on-success: ignore
+        on-failure: shutdown
+    neighsyncd:
+        override: replace
+        command: /usr/bin/neighsyncd
+        on-success: ignore
+        on-failure: shutdown
+    orchagent:
+        override: replace
+        command: /usr/bin/orchagent.sh
+        on-success: ignore
+        on-failure: shutdown
+    portmgrd:
+        override: replace
+        command: /usr/bin/portmgrd
+        on-success: ignore
+        on-failure: shutdown
+    portsyncd:
+        override: replace
+        command: /usr/bin/portsyncd
+        on-success: ignore
+        on-failure: shutdown
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+    tunnelmgrd:
+        override: replace
+        command: /usr/bin/tunnelmgrd
+        on-success: ignore
+        on-failure: shutdown
+    vlanmgrd:
+        override: replace
+        command: /usr/bin/vlanmgrd
+        on-success: ignore
+        on-failure: shutdown
+    vrfmgrd:
+        override: replace
+        command: /usr/bin/vrfmgrd
+        on-success: ignore
+        on-failure: shutdown
+    vxlanmgrd:
+        override: replace
+        command: /usr/bin/vxlanmgrd
+        on-success: ignore
+        on-failure: shutdown
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794300518
+@@procs@@
+1 0 1 1374 /usr/bin/pebbleenter
+101 1 101 1764 /usr/bin/orchagent-d/var/log/swss-b1024-s-m22:c4:6d:2a:1c:4c-qtcp://127.0.0.1
+132 101 101 1808 bash/usr/bin/orchagent.sh
+152 1 152 1876 /usr/bin/coppmgrd
+16 1 16 1405 /usr/sbin/rsyslogd-n-iNONE
+201 1 201 2411 /usr/bin/neighsyncd
+225 1 225 2525 /usr/bin/vlanmgrd
+260 1 260 2630 /usr/bin/intfmgrd
+413 1 413 2735 /usr/bin/portmgrd
+55 1 55 1514 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+557 1 557 2840 /usr/bin/fabricmgrd
+574 1 574 2945 /usr/bin/buffermgrd-l/usr/share/sonic/hwsku/pg_profile_lookup.ini
+613 1 613 3156 /usr/bin/vrfmgrd
+639 1 639 3261 /usr/bin/nbrmgrd
+654 1 654 3365 /usr/bin/vxlanmgrd
+675 1 675 3470 /usr/bin/tunnelmgrd
+694 1 694 3575 /usr/bin/fdbsyncd
+710 1 710 3681 /usr/bin/countersyncd--enable-otel
+85 1 85 1620 /usr/bin/portsyncd
+@@groups@@
+@@end@@

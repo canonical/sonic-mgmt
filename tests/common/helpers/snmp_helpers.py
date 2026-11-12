@@ -16,9 +16,8 @@ global_snmp_facts = {}
 
 
 def is_snmp_subagent_running(duthost):
-    cmd = "docker exec snmp supervisorctl status snmp-subagent"
-    output = duthost.shell(cmd)
-    if "RUNNING" in output["stdout"]:
+    subagent = duthost.get_process_table("snmp").get("snmp-subagent", bare=False)
+    if subagent is not None and subagent.state == "RUNNING":
         logger.info("SNMP Sub-Agent is Running")
         return True
     logger.info("SNMP Sub-Agent is Not Running")
@@ -37,8 +36,11 @@ def _update_snmp_facts(localhost, host, version, community, is_dell, include_swa
                        timeout=SNMP_DEFAULT_TIMEOUT):
     global global_snmp_facts
 
+    # skip the query while the subagent is down, as the failing supervisorctl status call used to
+    if not is_snmp_subagent_running(duthost):
+        global_snmp_facts = {}
+        return False
     try:
-        snmp_subagent_running = is_snmp_subagent_running(duthost)
         global_snmp_facts = _get_snmp_facts(localhost, host, version, community, is_dell, include_swap,
                                             module_ignore_errors=False, timeout=timeout)
     except RunAnsibleModuleFail as e:
@@ -46,7 +48,7 @@ def _update_snmp_facts(localhost, host, version, community, is_dell, include_swa
         global_snmp_facts = {}
         return False
 
-    return snmp_subagent_running and True
+    return True
 
 
 def get_snmp_facts(duthost, localhost, host, version, community, is_dell=False, module_ignore_errors=False,

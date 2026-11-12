@@ -184,15 +184,15 @@ def dhcp_severs_by_vlanid(duthost, vlanid):
                                                -iu Vlan100 -iu PortChannel0001 -iu PortChannel0002 -iu PortChannel0003 \
                                                -iu PortChannel0004 192.0.0.1 192.0.0.2 192.0.0.3 192.0.0.4
     """
-    cmds = "docker exec dhcp_relay supervisorctl status \
-        | grep 'dhcpv4-relay-Vlan{} ' | awk '{{print $4}}'".format(vlanid)
-    output = duthost.shell(cmds)
+    program = "dhcpv4-relay-Vlan{}".format(vlanid)
+    relay = next((process for process in duthost.get_process_table("dhcp_relay").processes
+                  if process.name.endswith(program)), None)
     pytest_assert(
-        not output['rc'],
-        "'{}' is not running successfully".format(cmds)
+        relay is not None and relay.state == "RUNNING" and relay.pid > 0,
+        "'{}' is not running successfully: {}".format(program, relay)
     )
 
-    pid = output['stdout'].strip(",")
+    pid = relay.pid
     logger.info("pid {} for Vlan{}".format(pid, vlanid))
 
     cmds = 'docker exec dhcp_relay ps -fp {} | sed "1d"'.format(pid)

@@ -155,8 +155,7 @@ def generate_nat_expected_rules(duthost):
     ip6tables_natrules.append("-P OUTPUT ACCEPT")
     ip6tables_natrules.append("-P POSTROUTING ACCEPT")
 
-    debian_version = duthost.command("grep VERSION_CODENAME /etc/os-release")['stdout'].lower()
-    if "trixie" in debian_version:
+    if duthost.os_profile().debian_base_at_least("trixie"):
         ip6tables_natrules.append("-N DOCKER")
         ip6tables_natrules.append("-A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER")
         ip6tables_natrules.append("-A OUTPUT ! -d ::1/128 -m addrtype --dst-type LOCAL -j DOCKER")

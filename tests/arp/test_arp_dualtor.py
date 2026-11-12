@@ -69,15 +69,13 @@ def pause_arp_update(duthosts):
     Some test cases manually call arp_update so we use this fixture to pause it on
     the testbed to prevent interference with the test case
     """
-    arp_update_stop_cmd = "docker exec -t swss supervisorctl stop arp_update"
     for duthost in duthosts:
-        duthost.shell(arp_update_stop_cmd)
+        duthost.control_container_process("swss", "stop", ["arp_update"])
 
     yield
 
-    arp_update_start_cmd = "docker exec -t swss supervisorctl start arp_update"
     for duthost in duthosts:
-        duthost.shell(arp_update_start_cmd)
+        duthost.control_container_process("swss", "start", ["arp_update"])
 
 
 @pytest.fixture(params=['IPv4', 'IPv6'])
@@ -619,7 +617,7 @@ def test_arp_update_for_failed_standby_neighbor(
             "failed-neighbor path".format(neighbor_ip)
         )
 
-    rand_selected_dut.shell("docker exec -t swss supervisorctl start arp_update")
+    rand_selected_dut.control_container_process("swss", "start", ["arp_update"])
 
     pytest_assert(wait_until(
         NEIGH_RESOLUTION_TIMEOUT, 1, 0,
@@ -843,7 +841,6 @@ def test_standby_unsolicited_neigh_learning(
     pytest_assert(wait_until(5, 1, 0, lambda: verify_neighbor_status(rand_selected_dut, neighbor_ip, REACHABLE)))
     rand_unselected_dut.shell("sudo ip neigh flush all")
 
-    arp_update_cmd = "docker exec -t swss supervisorctl start arp_update"
-    rand_selected_dut.shell(arp_update_cmd)
+    rand_selected_dut.control_container_process("swss", "start", ["arp_update"])
 
     pytest_assert(wait_until(5, 1, 0, lambda: verify_neighbor_status(rand_unselected_dut, neighbor_ip, REACHABLE)))

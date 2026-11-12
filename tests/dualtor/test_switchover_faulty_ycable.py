@@ -69,8 +69,7 @@ def setup_faulted_y_cable_driver(duthost, simulate_probe_unknown=False, simulate
         )
         duthost.shell(
             "docker cp /tmp/y_cable_simulated.py pmon:%s/" % y_cable_simulated_path)
-        duthost.shell(
-            "docker exec pmon supervisorctl restart ycabled")
+        duthost.control_container_process("pmon", "restart", ["ycabled"])
         # Sleep 10 seconds for ycabled restart
         time.sleep(10)
         yield
@@ -81,8 +80,7 @@ def setup_faulted_y_cable_driver(duthost, simulate_probe_unknown=False, simulate
                     path=y_cable_simulated_path
                 )
             )
-        duthost.shell(
-            "docker exec pmon supervisorctl restart ycabled")
+        duthost.control_container_process("pmon", "restart", ["ycabled"])
         # Sleep 10 seconds for ycabled restart
         time.sleep(10)
 

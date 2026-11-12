@@ -1,0 +1,11 @@
+@@backend@@
+supervisord
+@@critical@@
+program:gbsyncdmgrd
+@@status@@
+dependent-startup                EXITED    Nov 10 09:48 AM
+gbsyncdmgrd                      EXITED    Nov 10 09:48 AM
+rsyslogd                         RUNNING   pid 14, uptime 0:01:55
+start                            EXITED    Nov 10 09:48 AM
+supervisor-proc-exit-listener    RUNNING   pid 19, uptime 0:01:53
+@@end@@

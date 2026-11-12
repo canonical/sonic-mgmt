@@ -1,0 +1,13 @@
+@@backend@@
+supervisord
+@@critical@@
+program:snmpd
+program:snmp-subagent
+@@status@@
+dependent-startup                EXITED    Nov 10 09:08 PM
+rsyslogd                         RUNNING   pid 24, uptime 0:12:12
+snmp-subagent                    RUNNING   pid 33, uptime 0:12:09
+snmpd                            RUNNING   pid 29, uptime 0:12:12
+start                            EXITED    Nov 10 09:08 PM
+supervisor-proc-exit-listener    RUNNING   pid 30, uptime 0:12:09
+@@end@@

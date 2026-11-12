@@ -124,7 +124,7 @@ def stop_pmon_sensord_task(ans_host):
 def start_pmon_sensord_task(duthost):
     sensord_running_status, sensord_pid = check_sensord_status(duthost)
     if not sensord_running_status:
-        duthost.command("docker exec pmon supervisorctl restart lm-sensors")
+        duthost.control_container_process("pmon", "restart", ["lm-sensors"])
         time.sleep(3)
         sensord_running_status, sensord_pid = check_sensord_status(duthost)
         if sensord_running_status:
@@ -152,7 +152,7 @@ def psu_test_setup_teardown(duthosts, enum_rand_one_per_hwsku_hostname):
     logging.info("Starting psu test teardown")
     sensord_running_status, sensord_pid = check_sensord_status(duthost)
     if not sensord_running_status:
-        duthost.command("docker exec pmon supervisorctl restart lm-sensors")
+        duthost.control_container_process("pmon", "restart", ["lm-sensors"])
         time.sleep(3)
         sensord_running_status, sensord_pid = check_sensord_status(duthost)
         if sensord_running_status:

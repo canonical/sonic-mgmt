@@ -3,7 +3,6 @@ Test the auto-restart feature of containers
 """
 import logging
 import re
-from collections import defaultdict
 
 import pytest
 
@@ -12,6 +11,7 @@ from tests.common.helpers.assertions import pytest_assert
 from tests.common.helpers.assertions import pytest_require
 from tests.common import config_reload
 from tests.common.helpers.dut_utils import get_disabled_container_list
+from tests.common.helpers.dut_utils import get_group_program_info, get_program_info, kill_process_by_pid
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def config_reload_after_tests(duthosts, selected_rand_one_per_hwsku_hostname, tb
 
 
 def is_supervisor_program_running(duthost, container_name, program_name):
-    return "RUNNING" in duthost.shell(f"docker exec {container_name} supervisorctl status {program_name}")["stdout"]
+    return duthost.is_service_running(program_name, container_name)
 
 
 def enable_autorestart(duthost):
@@ -232,61 +232,6 @@ def ignore_expected_loganalyzer_exception(duthosts, enum_rand_one_per_hwsku_host
                 loganalyzer[a_dut.hostname].ignore_regex.extend(ignore_regex_dict[feature])
 
 
-def get_group_program_info(duthost, container_name, group_name):
-    """
-    @summary: Get program names, running status and their pids by analyzing the command
-              output of "docker exec <container_name> supervisorctl status". Program name
-              at here represents a program which is part of group <group_name>
-    @return: A dictionary where keys are the program names and values are their running
-             status and pids
-    """
-    group_program_info = defaultdict(list)
-    program_name = None
-    program_status = None
-    program_pid = -1
-
-    program_list = duthost.shell("docker exec {} supervisorctl status"
-                                 .format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(group_name) != -1:
-            program_name = program_info.split()[0].split(':')[1].strip()
-            program_status = program_info.split()[1].strip()
-            if program_status in ["EXITED", "STOPPED", "STARTING"]:
-                program_pid = -1
-            else:
-                program_pid = int(program_info.split()[3].strip(','))
-
-            group_program_info[program_name].append(program_status)
-            group_program_info[program_name].append(program_pid)
-
-    return group_program_info
-
-
-def get_program_info(duthost, container_name, program_name):
-    """
-    @summary: Get program running status and its pid by analyzing the command
-              output of "docker exec <container_name> supervisorctl status"
-    @return:  Program running status and its pid
-    """
-    program_status = None
-    program_pid = -1
-
-    program_list = duthost.shell("docker exec {} supervisorctl status"
-                                 .format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(program_name) != -1:
-            program_status = program_info.split()[1].strip()
-            if program_status == "RUNNING":
-                program_pid = int(program_info.split()[3].strip(','))
-            break
-
-    if program_pid != -1:
-        logger.info("Found program '{}' in the '{}' state with pid {}"
-                    .format(program_name, program_status, program_pid))
-
-    return program_status, program_pid
-
-
 def is_container_running(duthost, container_name):
     """
     @summary: Decide whether the container is running or not
@@ -302,20 +247,6 @@ def check_container_state(duthost, container_name, should_be_running):
     """
     is_running = is_container_running(duthost, container_name)
     return is_running == should_be_running
-
-
-def kill_process_by_pid(duthost, container_name, program_name, program_pid):
-    """
-    @summary: Kill a process in the specified container by its pid
-    """
-    kill_cmd_result = duthost.shell("docker exec {} kill -SIGKILL {}".format(container_name, program_pid))
-
-    # Get the exit code of 'kill' command
-    exit_code = kill_cmd_result["rc"]
-    pytest_assert(exit_code == 0, "Failed to stop program '{}' before test".format(program_name))
-
-    logger.info("Program '{}' in container '{}' was stopped successfully"
-                .format(program_name, container_name))
 
 
 def is_hiting_start_limit(duthost, service_name):
@@ -403,7 +334,7 @@ def verify_no_autorestart_with_non_critical_process(duthost, container_name, pro
     pytest_assert(not stopped, "Container '{}' was stopped unexpectedly".format(container_name))
     logger.info("Container '{}' did not stop".format(container_name))
     logger.info("Restart the program '{}' in container '{}'".format(program_name, container_name))
-    duthost.shell("docker exec {} supervisorctl start {}".format(container_name, program_name))
+    duthost.control_container_process(container_name, "start", [program_name])
 
 
 def check_all_critical_processes_status(duthost):

@@ -1,0 +1,53 @@
+@@backend@@
+pebble
+@@critical@@
+program:gnmi-native
+@@services@@
+{"services":{"dialout":{"name":"dialout","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:30.224660328Z"},"gnmi-native":{"name":"gnmi-native","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:29.193155178Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:30.102084621Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:29.07450221Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T09:48:31.234724849Z"}}}
+
+@@plan@@
+services:
+    dialout:
+        override: replace
+        command: /usr/bin/dialout.sh
+    gnmi-native:
+        override: replace
+        command: /usr/bin/gnmi-native.sh
+        on-success: ignore
+        on-failure: shutdown
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794302391
+@@procs@@
+38703 38670 38703 171782 /usr/bin/pebbleenter
+38750 38703 38750 171789 /usr/sbin/rsyslogd-n-iNONE
+38901 38703 38901 171801 /usr/sbin/telemetry-logtostderr--noTLS--port8080--allow_no_client_auth-v=2--threshold100--idle_conn_duration5
+39412 38703 39412 171892 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+39501 38703 39501 171904 /usr/sbin/dialout_client_cli-insecure-logtostderr-v2
+@@groups@@
+@@end@@

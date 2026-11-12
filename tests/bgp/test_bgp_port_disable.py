@@ -80,9 +80,7 @@ def verify_port_accessibility_for_other_users(duthost, port, restrict=True):
 
 
 def verify_port_accessibility_fpmsyncd(duthost):
-    cmd = "docker exec -it bgp bash -c 'supervisorctl restart fpmsyncd'"
-
-    duthost.command(cmd, module_ignore_errors=True)
+    duthost.control_container_process("bgp", "restart", ["fpmsyncd"], module_ignore_errors=True)
     time.sleep(5)
 
     # verify the connection between fpmsyncd and zebra

@@ -1,0 +1,12 @@
+@@backend@@
+supervisord
+@@critical@@
+program:eventd
+@@status@@
+dependent-startup                EXITED    Nov 10 09:06 PM
+eventd                           RUNNING   pid 26, uptime 0:13:04
+eventdb                          EXITED    Nov 10 09:06 PM
+rsyslogd                         RUNNING   pid 16, uptime 0:13:06
+start                            EXITED    Nov 10 09:06 PM
+supervisor-proc-exit-listener    RUNNING   pid 21, uptime 0:13:04
+@@end@@

@@ -33,7 +33,7 @@ def populate_mac_table(duthosts):
     to VLAN members
     """
     for duthost in duthosts:
-        duthost.shell("docker exec swss supervisorctl restart arp_update", module_ignore_errors=True)
+        duthost.control_container_process("swss", "restart", ["arp_update"], module_ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)

@@ -1,0 +1,11 @@
+@@backend@@
+supervisord
+@@critical@@
+program:syncd
+@@status@@
+dependent-startup                EXITED    Nov 10 09:48 AM
+rsyslogd                         RUNNING   pid 15, uptime 0:02:10
+start                            EXITED    Nov 10 09:48 AM
+supervisor-proc-exit-listener    RUNNING   pid 26, uptime 0:02:08
+syncd                            RUNNING   pid 35, uptime 0:02:08
+@@end@@

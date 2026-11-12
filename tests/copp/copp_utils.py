@@ -273,9 +273,7 @@ def _install_nano(dut, creds,  syncd_docker_name):
             creds (dict): Credential information according to the dut inventory
     """
 
-    codename = dut.shell("docker exec {} grep VERSION_CODENAME /etc/os-release"
-                         .format(syncd_docker_name))['stdout'].lower()
-    if "bookworm" in codename or "trixie" in codename:
+    if dut.os_profile(syncd_docker_name).debian_base_at_least("bookworm"):
         _install_nano_bookworm(dut, creds, syncd_docker_name)
         return
 

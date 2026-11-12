@@ -1,0 +1,162 @@
+@@backend@@
+pebble
+@@critical@@
+group:dhcp-relay
+@@services@@
+{"services":{"dhcp6relay":{"name":"dhcp6relay","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:41.670108816Z"},"dhcpmon-Vlan1000":{"name":"dhcpmon-Vlan1000","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:42.704299786Z"},"dhcprelayd":{"name":"dhcprelayd","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:43.738813675Z"},"isc-dhcpv4-relay-Vlan1000":{"name":"isc-dhcpv4-relay-Vlan1000","startup":"disabled","current":"active","current-since":"2026-11-10T09:48:40.62617256Z"},"proc-exit-listener":{"name":"proc-exit-listener","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:21.660766165Z"},"rsyslogd":{"name":"rsyslogd","startup":"enabled","current":"active","current-since":"2026-11-10T09:48:20.624998157Z"},"start":{"name":"start","startup":"enabled","current":"inactive","current-since":"2026-11-10T09:48:44.749879474Z"}}}
+
+@@plan@@
+services:
+    dhcp6relay:
+        override: replace
+        command: /usr/sbin/dhcp6relay
+        on-success: ignore
+        on-failure: shutdown
+    dhcpmon-Vlan1000:
+        override: replace
+        command: /usr/sbin/dhcpmon -id Vlan1000 -iu PortChannel101 -iu PortChannel102 -iu PortChannel103 -iu PortChannel104 -im eth0
+    dhcprelayd:
+        override: replace
+        command: /usr/bin/dhcprelayd
+        on-success: ignore
+        on-failure: shutdown
+    isc-dhcpv4-relay-Vlan1000:
+        override: replace
+        command: /usr/sbin/dhcrelay -d -m discard -a %h:%p %P --name-alias-map-file /tmp/port-name-alias-map.txt -id Vlan1000 -iu PortChannel101 -iu PortChannel102 -iu PortChannel103 -iu PortChannel104 192.0.0.1 192.0.0.2 192.0.0.3 192.0.0.4
+    proc-exit-listener:
+        startup: enabled
+        override: replace
+        command: /usr/bin/supervisor-proc-exit-listener-rs --pebble
+        after:
+            - rsyslogd
+        requires:
+            - rsyslogd
+        on-success: ignore
+    rsyslogd:
+        startup: enabled
+        override: replace
+        command: /usr/sbin/rsyslogd -n -iNONE
+    start:
+        startup: enabled
+        override: replace
+        command: /usr/bin/start.sh
+        on-success: ignore
+        on-failure: ignore
+log-targets:
+    host-syslog:
+        type: syslog
+        location: udp://127.0.0.1:514/
+        services:
+            - all
+        override: replace
+@@btime@@
+1794302391
+@@procs@@
+1 0 1 170931 /usr/bin/pebbleenter
+101 1 101 172944 /usr/sbin/dhcrelay-d-mdiscard-a%h:%p%P--name-alias-map-file/tmp/port-name-alias-map.txt-idVlan1000-iuPortChannel101-iuPortChannel102-iuPortChannel103-iuPortChannel104192.0.0.1192.0.0.2192.0.0.3192.0.0.4
+109 1 109 173049 /usr/sbin/dhcp6relay
+122 1 122 173152 /usr/sbin/dhcpmon-idVlan1000-iuPortChannel101-iuPortChannel102-iuPortChannel103-iuPortChannel104-imeth0
+136 1 136 173256 /usr/bin/python3/usr/bin/dhcprelayd
+16 1 16 170944 /usr/sbin/rsyslogd-n-iNONE
+38 1 38 171047 /usr/bin/supervisor-proc-exit-listener-rs--pebble
+@@groups@@
+[supervisord]
+logfile_maxbytes=1MB
+logfile_backups=2
+nodaemon=true
+
+[eventlistener:dependent-startup]
+command=python3 -m supervisord_dependent_startup
+autostart=true
+autorestart=unexpected
+startretries=0
+exitcodes=0,3
+events=PROCESS_STATE
+buffer_size=1024
+
+[eventlistener:supervisor-proc-exit-listener]
+command=/usr/bin/supervisor-proc-exit-listener-rs --container-name dhcp_relay
+events=PROCESS_STATE_EXITED,PROCESS_STATE_RUNNING
+autostart=true
+autorestart=unexpected
+buffer_size=1024
+
+[program:rsyslogd]
+command=/usr/sbin/rsyslogd -n -iNONE
+priority=1
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+
+[program:start]
+command=/usr/bin/start.sh
+priority=2
+autostart=false
+autorestart=false
+startsecs=0
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=rsyslogd:running
+
+[group:dhcp-relay]
+programs=dhcprelayd,dhcp6relay
+
+[program:isc-dhcpv4-relay-Vlan1000]
+command=/usr/sbin/dhcrelay -d -m discard -a %%h:%%p %%P --name-alias-map-file /tmp/port-name-alias-map.txt -id Vlan1000 -iu PortChannel101 -iu PortChannel102 -iu PortChannel103 -iu PortChannel104 192.0.0.1 192.0.0.2 192.0.0.3 192.0.0.4
+priority=3
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=start:exited
+
+
+[program:dhcp6relay]
+command=/usr/sbin/dhcp6relay
+priority=3
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=start:exited
+
+[group:dhcpmon]
+programs=dhcpmon-Vlan1000
+
+[program:dhcpmon-Vlan1000]
+command=/usr/sbin/dhcpmon -id Vlan1000 -iu PortChannel101 -iu PortChannel102 -iu PortChannel103 -iu PortChannel104 -im eth0
+priority=4
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=isc-dhcpv4-relay-Vlan1000:running
+
+[program:dhcprelayd]
+command=/usr/local/bin/dhcprelayd
+priority=3
+autostart=false
+autorestart=false
+stdout_logfile=NONE
+stdout_syslog=true
+stderr_logfile=NONE
+stderr_syslog=true
+dependent_startup=true
+dependent_startup_wait_for=start:exited
+@@end@@

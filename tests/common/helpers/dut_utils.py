@@ -208,41 +208,32 @@ def restart_service_with_startlimit_guard(duthost, service_name, backoff_seconds
 
 
 def get_group_program_info(duthost, container_name, group_name):
-    """Gets program names, running status and their pids by analyzing the command
-       output of "docker exec <container_name> supervisorctl status". Program name
-       at here represents a program which is part of group <group_name>
+    """Gets program names, running status and their pids of the programs in group <group_name>
+       of a container, whether supervisord or pebble runs them.
 
     Args:
         duthost: Hostname of DUT.
         container_name: A string shows container name.
-        program_name: A string shows process name.
+        group_name: A string shows group name.
 
     Returns:
         A dictionary where keys are the program names and values are their running
         status and pids.
     """
     group_program_info = defaultdict(list)
-    program_name = None
-    program_status = None
-    program_pid = None
 
-    program_list = duthost.shell("docker exec {} supervisorctl status"
-                                 .format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(group_name) != -1:
-            program_name = program_info.split()[0].split(':')[1].strip()
-            program_status = program_info.split()[1].strip()
-            if program_status in ["EXITED", "STOPPED", "STARTING"]:
-                program_pid = -1
-            else:
-                program_pid = int(program_info.split()[3].strip(','))
+    for process in duthost.get_process_table(container_name).processes:
+        if group_name in process.full_name:
+            program_pid = -1 if process.state in ["EXITED", "STOPPED", "STARTING"] else process.pid
+            if process.state == "RUNNING" and program_pid <= 0:
+                logger.warning("No pid for running program '{}': {}".format(process.full_name, process.pid_note))
 
-            group_program_info[program_name].append(program_status)
-            group_program_info[program_name].append(program_pid)
+            group_program_info[process.name].append(process.state)
+            group_program_info[process.name].append(program_pid)
 
             if program_pid != -1:
                 logger.info("Found program '{}' in the '{}' state with pid {}"
-                            .format(program_name, program_status, program_pid))
+                            .format(process.name, process.state, program_pid))
 
     return group_program_info
 
@@ -276,8 +267,7 @@ def start_container_process(duthost, container_name, command):
 
 
 def get_program_info(duthost, container_name, program_name):
-    """Gets program running status and its pid by analyzing the command
-       output of "docker exec <container_name> supervisorctl status"
+    """Gets program running status and its pid in a container, whether supervisord or pebble runs it.
 
     Args:
         duthost: Hostname of DUT.
@@ -290,13 +280,13 @@ def get_program_info(duthost, container_name, program_name):
     program_status = None
     program_pid = -1
 
-    program_list = duthost.shell("docker exec {} supervisorctl status"
-                                 .format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(program_name) != -1:
-            program_status = program_info.split()[1].strip()
+    for process in duthost.get_process_table(container_name).processes:
+        if program_name in process.full_name:
+            program_status = process.state
             if program_status == "RUNNING":
-                program_pid = int(program_info.split()[3].strip(','))
+                program_pid = process.pid
+                if program_pid <= 0:
+                    logger.warning("No pid for running program '{}': {}".format(process.full_name, process.pid_note))
             break
 
     if program_pid != -1:
@@ -310,6 +300,10 @@ def kill_process_by_pid(duthost, container_name, program_name, program_pid):
     """
     @summary: Kill a process in the specified container by its pid
     """
+    # pebble reports pid -1 for a service it cannot match; `kill -SIGKILL -1` would kill every process
+    pytest_assert(isinstance(program_pid, int) and program_pid > 0,
+                  "Refusing to kill program '{}' in container '{}': pid {} is not a process"
+                  .format(program_name, container_name, program_pid))
     kill_cmd_result = duthost.shell("docker exec {} kill -SIGKILL {}".format(container_name, program_pid))
 
     # Get the exit code of 'kill' command
@@ -431,20 +425,17 @@ def verify_orchagent_running_or_assert(duthost):
 
     def _orchagent_running():
         if duthost.is_multi_asic:
-            num_asic = duthost.facts.get('num_asic')
-            for asic_index in range(num_asic):
-                cmd = 'docker exec swss{} supervisorctl status orchagent'.format(asic_index)
-                output = duthost.shell(cmd, module_ignore_errors=True)
-                pytest_assert(not output['rc'], "Unable to check orchagent status output for asic_id {}"
-                              .format(asic_index))
-                if 'RUNNING' not in output['stdout']:
-                    return False
-            return True
+            containers = ['swss{}'.format(asic_index) for asic_index in range(duthost.facts.get('num_asic'))]
         else:
-            cmds = 'docker exec swss supervisorctl status orchagent'
-            output = duthost.shell(cmds, module_ignore_errors=True)
-            pytest_assert(not output['rc'], "Unable to check orchagent status output")
-            return 'RUNNING' in output['stdout']
+            containers = ['swss']
+        for container in containers:
+            table = duthost.get_process_table(container)
+            pytest_assert(table.running and table.error is None,
+                          "Unable to check orchagent status in {}: {}".format(container, table.error))
+            orchagent = table.get('orchagent')
+            if orchagent is None or orchagent.state != 'RUNNING':
+                return False
+        return True
 
     pytest_assert(
         wait_until(120, 10, 0, _orchagent_running),

@@ -291,16 +291,11 @@ def disable_swss_syslog_rate_limit(duthost, asichost):
     config_file = "/etc/rsyslog.conf"
 
     def restart_rsyslog():
-        duthost.shell(
-            "docker exec {} supervisorctl restart rsyslogd".format(swss_container)
-        )
+        duthost.control_container_process(swss_container, "restart", ["rsyslogd"])
 
         def is_rsyslog_running():
-            status = duthost.shell(
-                "docker exec {} supervisorctl status rsyslogd".format(swss_container),
-                module_ignore_errors=True
-            )
-            return status.get("rc") == 0 and "RUNNING" in status.get("stdout", "")
+            rsyslogd = duthost.get_process_table(swss_container).get("rsyslogd", bare=False)
+            return rsyslogd is not None and rsyslogd.state == "RUNNING"
 
         pytest_assert(
             wait_until(10, 1, 0, is_rsyslog_running),
@@ -1593,8 +1588,7 @@ def test_crm_fdb_entry(duthosts, enum_rand_one_per_hwsku_frontend_hostname, enum
     duthost.command(cmd_add_vlan_member.format(vid=vlan_id, iface=iface))
 
     # Stop arp_update
-    cmd = "docker exec -i swss supervisorctl stop arp_update"
-    duthost.command(cmd)
+    duthost.control_container_process("swss", "stop", ["arp_update"])
 
     # Remove FDB entry and wait for clear to complete
     cmd = "fdbclear"
