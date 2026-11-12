@@ -149,6 +149,9 @@ def check_monit_running(duthost):
         state = service_info.get("service_status", "")
         if state in ["Not monitored", "OK"]:
             continue
+        # Monit 5.35 shows a program checked 'every N cycles' as Waiting until its first result
+        if service_type == "Program" and state == "Waiting":
+            continue
         # Check expected states per service type
         if ((service_type == "Filesystem" and state != "Accessible")
                 or (service_type == "Process" and state != "Running")
