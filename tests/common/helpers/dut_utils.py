@@ -10,6 +10,7 @@ import pytest
 from tests.common.helpers.assertions import pytest_assert
 from tests.common.utilities import get_host_visible_vars
 from tests.common.utilities import wait_until
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.errors import RunAnsibleModuleFail
 from collections import defaultdict
 from tests.common.connections.console_host import ConsoleHost, CONSOLE_LINECARD
@@ -503,10 +504,10 @@ def is_virtual_platform(duthost):
         duthost: DUT host object.
 
     Returns:
-        True if the platform is x86_64-kvm_x86_64-r0 (used by both VS and VPP testbeds),
+        True if the platform is a vs platform in KVM_PLATFORMS (used by both VS and VPP testbeds),
         False otherwise.
     """
-    return duthost.facts.get("platform") == "x86_64-kvm_x86_64-r0"
+    return duthost.facts.get("platform") in KVM_PLATFORMS
 
 
 def is_mellanox_fanout(duthost, localhost):

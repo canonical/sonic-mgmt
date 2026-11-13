@@ -17,6 +17,8 @@ RESOLV_CONF_NAMESERVERS = {
     "public": []
 }
 KVM_PLATFORM = 'x86_64-kvm_x86_64-r0'
+# vs images: the arm64 one reports ONIE's qemu platform, an alias of the x86 one
+KVM_PLATFORMS = (KVM_PLATFORM, 'arm64-qemu_armv8a-r0')
 GOLDEN_CONFIG_DB_PATH = "/etc/sonic/golden_config_db.json"
 GOLDEN_CONFIG_DB_PATH_ORI = "/etc/sonic/golden_config_db.json.origin.backup"
 

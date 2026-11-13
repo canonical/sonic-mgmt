@@ -8,7 +8,7 @@ from tests.common.devices.eos import EosHost
 from tests.common.macsec.macsec_helper import check_wpa_supplicant_process, check_appl_db, check_mka_session,\
                            get_mka_session, get_sci, get_appl_db, get_ipnetns_prefix
 from tests.common.macsec.macsec_config_helper import setup_macsec_configuration, delete_macsec_profile
-from tests.common.macsec.macsec_platform_helper import get_platform, get_macsec_ifname
+from tests.common.macsec.macsec_platform_helper import get_platform, get_macsec_ifname, is_virtual_switch_platform
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class TestControlPlane():
             # If the DUT isn't a virtual switch that cannot support "get mka session" by "ip macsec show"
             # So, skip this test for physical switch
             # TODO: Support "get mka session" in the physical switch
-            if "x86_64-kvm_x86_64" not in get_platform(duthost):
+            if not is_virtual_switch_platform(get_platform(duthost)):
                 # TODO: add check mka session later, now wait some time for session ready
                 sleep(30)
                 logging.info(

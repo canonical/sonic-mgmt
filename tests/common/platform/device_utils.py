@@ -10,6 +10,7 @@ import http.client
 from datetime import datetime
 from collections import OrderedDict
 from tests.common.utilities import wait_until
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.helpers.assertions import pytest_assert
 from tests.common.helpers.dut_ports import encode_dut_port_name
 from tests.common.platform.transceiver_utils import parse_transceiver_info
@@ -339,7 +340,7 @@ def check_interfaces_and_transceivers(duthost, request):
 
     # Skip this step for virtual testbed - KVM testbed has transeivers marked as "Not present"
     # and the DB returns an "empty array" for "keys TRANSCEIVER_INFO*"
-    if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+    if duthost.facts['platform'] in KVM_PLATFORMS:
         return
 
     logging.info(
@@ -822,7 +823,7 @@ def get_report_summary(duthost, analyze_result, reboot_type, reboot_oper, base_o
         if lacp_sessions_dict and "lacp_sessions" in lacp_sessions_dict else None
     controlplane_summary = {"downtime": "",
                             "arp_ping": "", "lacp_session_max_wait": ""}
-    if duthost.facts['platform'] != 'x86_64-kvm_x86_64-r0':
+    if duthost.facts['platform'] not in KVM_PLATFORMS:
         if lacp_sessions_waittime and len(lacp_sessions_waittime) > 0:
             # Filter out None values and then fine the maximum
             filtered_lacp_sessions_waittime = [value for value in lacp_sessions_waittime.values() if value is not None]
@@ -1101,7 +1102,7 @@ def advanceboot_loganalyzer_factory(duthost, request, marker_postfix=None):
         if gating_failures:
             verification_errors.extend(gating_failures)
         verify_mac_jumping(test_name, analyze_result, verification_errors)
-        if duthost.facts['platform'] != 'x86_64-kvm_x86_64-r0':
+        if duthost.facts['platform'] not in KVM_PLATFORMS:
             # TBD: expand this verification to KVM - extra port events in KVM which need to be filtered
             verify_required_events(
                 duthost, event_counters, analyze_result, verification_errors)
@@ -1124,7 +1125,7 @@ def advanceboot_loganalyzer(duthosts, enum_rand_one_per_hwsku_frontend_hostname,
     duthost = duthosts[enum_rand_one_per_hwsku_frontend_hostname]
     # Currently, advanced reboot test would skip for kvm platform if the test has no device_type marker for vs.
     # Doing the same skip logic in this fixture to avoid running loganalyzer without the test executed
-    if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+    if duthost.facts['platform'] in KVM_PLATFORMS:
         device_marks = [arg for mark in request.node.iter_markers(
             name='device_type') for arg in mark.args]
         if 'vs' not in device_marks:
@@ -1150,7 +1151,7 @@ def multihop_advanceboot_loganalyzer_factory(duthosts, enum_rand_one_per_hwsku_f
     duthost = duthosts[enum_rand_one_per_hwsku_frontend_hostname]
     # Currently, advanced reboot test would skip for kvm platform if the test has no device_type marker for vs.
     # Doing the same skip logic in this fixture to avoid running loganalyzer without the test executed
-    if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+    if duthost.facts['platform'] in KVM_PLATFORMS:
         device_marks = [arg for mark in request.node.iter_markers(
             name='device_type') for arg in mark.args]
         if 'vs' not in device_marks:
