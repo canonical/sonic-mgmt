@@ -275,7 +275,7 @@ def _install_nano(dut, creds,  syncd_docker_name):
 
     codename = dut.shell("docker exec {} grep VERSION_CODENAME /etc/os-release"
                          .format(syncd_docker_name))['stdout'].lower()
-    if "bookworm" in codename or "trixie" in codename:
+    if "bookworm" in codename or "trixie" in codename or "resolute" in codename:
         _install_nano_bookworm(dut, creds, syncd_docker_name)
         return
 
