@@ -8,6 +8,7 @@ from jinja2 import Template
 from tests.common.platform.device_utils import fanout_switch_port_lookup
 from tests.common.helpers.assertions import pytest_assert
 from tests.common.utilities import wait_until, wait_tcp_connection, get_upstream_neigh_type
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.config_reload import config_reload
 from bgp_helpers import BGPMON_TEMPLATE_FILE, BGP_MONITOR_NAME
 from bgp_helpers import BGPSENTINEL_CONFIG_FILE
@@ -562,7 +563,7 @@ def _run_stress_link_flap_test(duthost, setup, nbrhosts, fanouthosts, test_type,
     # Skip the test on Virtual Switch due to fanout switch dependency and warm reboot
     asic_type = duthost.facts['asic_type']
     platform = duthost.facts['platform']
-    if (asic_type == "vs" or asic_type == "vpp") and (platform == "x86_64-kvm_x86_64-r0") \
+    if (asic_type == "vs" or asic_type == "vpp") and (platform in KVM_PLATFORMS) \
             and (test_type == "fanout" or test_type == "all"):
         pytest.skip("Stress link flap test is not supported on Virtual Switch")
 

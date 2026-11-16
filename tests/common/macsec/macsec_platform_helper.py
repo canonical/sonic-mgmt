@@ -6,6 +6,7 @@ from multiprocessing.pool import ThreadPool
 import pytest
 
 from tests.common.devices.eos import EosHost
+from tests.common.constants import KVM_PLATFORMS
 
 
 __all__ = [
@@ -57,9 +58,14 @@ def get_all_ifnames(host, asic=None):
     return ports
 
 
+def is_virtual_switch_platform(platform):
+    # the substring also covers the multi-asic kvm platforms
+    return "x86_64-kvm_x86_64" in platform or platform in KVM_PLATFORMS
+
+
 def get_eth_ifname(host, port_name):
     asic = None
-    if "x86_64-kvm_x86_64" in get_platform(host):
+    if is_virtual_switch_platform(get_platform(host)):
         logging.info("Get the eth ifname on the virtual SONiC switch")
         if host.is_multi_asic:
             asic = host.get_port_asic_instance(port_name)
@@ -72,7 +78,7 @@ def get_eth_ifname(host, port_name):
 
 def get_macsec_ifname(host, port_name):
     asic = None
-    if "x86_64-kvm_x86_64" not in get_platform(host):
+    if not is_virtual_switch_platform(get_platform(host)):
         logging.info(
             "Can only get the macsec ifname on the virtual SONiC switch")
         return None

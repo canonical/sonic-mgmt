@@ -3,6 +3,7 @@ import logging
 
 from tests.common.helpers.assertions import pytest_require as pyrequire
 from tests.common.helpers.dut_utils import check_container_state
+from tests.common.constants import KVM_PLATFORMS
 from tests.gnmi.helper import gnmi_container, apply_cert_config, recover_cert_config
 from tests.gnmi.helper import GNMI_SERVER_START_WAIT_TIME, check_ntp_sync_status
 from tests.common.gu_utils import create_checkpoint, rollback
@@ -21,7 +22,7 @@ def setup_gnmi_ntp_client_server(duthosts, rand_one_dut_hostname, ptfhost):
     """Auto-setup NTP for all gNMI tests using existing helper."""
     duthost = duthosts[rand_one_dut_hostname]
 
-    if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+    if duthost.facts['platform'] in KVM_PLATFORMS:
         logger.info("check_system_time_sync is skipped for this platform, so skip ntp setup")
         yield
         return

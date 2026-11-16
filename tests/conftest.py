@@ -27,6 +27,7 @@ from tests.common.fixtures.conn_graph_facts import conn_graph_facts     # noqa: 
 from tests.common.devices.local import Localhost
 from tests.common.devices.ptf import PTFHost
 from tests.common.devices.eos import EosHost
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.devices.sonic import SonicHost
 from tests.common.devices.csonic import CsonicHost
 from tests.common.devices.fanout import FanoutHost
@@ -1294,7 +1295,7 @@ def fanouthosts(enhance_inventory, ansible_adhoc, tbinfo, conn_graph_facts, cred
         duthost = duthosts[dut_name]
 
         # Skip virtual testbed which has no fanout
-        if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+        if duthost.facts['platform'] in KVM_PLATFORMS:
             logging.info(f"Skipping kvm platform {dut_name}")
             continue
 
@@ -1335,7 +1336,7 @@ def fanouthosts(enhance_inventory, ansible_adhoc, tbinfo, conn_graph_facts, cred
         duthost = duthosts[dut_name]
 
         # Skip virtual testbed which has no fanout
-        if duthost.facts['platform'] == 'x86_64-kvm_x86_64-r0':
+        if duthost.facts['platform'] in KVM_PLATFORMS:
             logging.info(f"Skipping kvm platform {dut_name} for serial links")
             continue
 

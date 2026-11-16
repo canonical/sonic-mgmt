@@ -3,6 +3,7 @@ import logging
 import pytest
 import json
 from tests.common.utilities import wait_until
+from tests.common.constants import KVM_PLATFORMS
 from tests.common.platform.device_utils import get_dpu_ip, get_dpu_port
 from tests.common.helpers.gnmi_utils import GNMIEnvironment, add_gnmi_client_common_name, del_gnmi_client_common_name, \
                                             dump_gnmi_log, dump_system_status
@@ -69,7 +70,7 @@ def apply_cert_config(duthost):
         dump_gnmi_log(duthost)
         dump_system_status(duthost)
         pytest.fail("Failed to start gnmi server")
-    if duthost.facts['platform'] != 'x86_64-kvm_x86_64-r0':
+    if duthost.facts['platform'] not in KVM_PLATFORMS:
         is_time_synced = wait_until(80, 3, 0, check_system_time_sync, duthost)
         assert is_time_synced, "Failed to synchronize DUT system time with NTP Server"
     return stopped_programs
