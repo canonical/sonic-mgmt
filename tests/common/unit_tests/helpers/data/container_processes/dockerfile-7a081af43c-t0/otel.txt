@@ -1,0 +1,11 @@
+@@backend@@
+supervisord
+@@critical@@
+program:otel
+@@status@@
+dependent-startup                EXITED    Nov 10 09:08 PM
+otel                             RUNNING   pid 9348, uptime 0:11:59
+rsyslogd                         RUNNING   pid 8364, uptime 0:12:02
+start                            EXITED    Nov 10 09:08 PM
+supervisor-proc-exit-listener    RUNNING   pid 8977, uptime 0:12:00
+@@end@@

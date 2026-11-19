@@ -1,0 +1,12 @@
+@@backend@@
+supervisord
+@@critical@@
+program:gnmi-native
+@@status@@
+dependent-startup                EXITED    Nov 10 09:06 PM
+dialout                          RUNNING   pid 4472, uptime 0:13:14
+gnmi-native                      RUNNING   pid 4102, uptime 0:13:16
+rsyslogd                         RUNNING   pid 3963, uptime 0:13:19
+start                            EXITED    Nov 10 09:06 PM
+supervisor-proc-exit-listener    RUNNING   pid 3962, uptime 0:13:19
+@@end@@
