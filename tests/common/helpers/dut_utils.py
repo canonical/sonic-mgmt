@@ -226,16 +226,14 @@ def get_group_program_info(duthost, container_name, group_name):
     program_status = None
     program_pid = None
 
-    program_list = duthost.shell("docker exec {} supervisorctl status"
-                                 .format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(group_name) != -1:
-            program_name = program_info.split()[0].split(':')[1].strip()
-            program_status = program_info.split()[1].strip()
+    for process in duthost.get_process_table(container_name).processes:
+        if group_name in process.full_name:
+            program_name = process.name
+            program_status = process.state
             if program_status in ["EXITED", "STOPPED", "STARTING"]:
                 program_pid = -1
             else:
-                program_pid = int(program_info.split()[3].strip(','))
+                program_pid = process.pid
 
             group_program_info[program_name].append(program_status)
             group_program_info[program_name].append(program_pid)
@@ -290,13 +288,11 @@ def get_program_info(duthost, container_name, program_name):
     program_status = None
     program_pid = -1
 
-    program_list = duthost.shell("docker exec {} supervisorctl status"
-                                 .format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(program_name) != -1:
-            program_status = program_info.split()[1].strip()
+    for process in duthost.get_process_table(container_name).processes:
+        if program_name in process.full_name:
+            program_status = process.state
             if program_status == "RUNNING":
-                program_pid = int(program_info.split()[3].strip(','))
+                program_pid = process.pid
             break
 
     if program_pid != -1:
@@ -429,22 +425,28 @@ def verify_orchagent_running_or_assert(duthost):
         duthost: Device Under Test (DUT)
     """
 
+    def _orchagent_status(container):
+        # '' where `supervisorctl status orchagent` exits non-zero: no container, no program or a stopped state
+        table = duthost.get_process_table(container)
+        orchagent = table.get('orchagent', bare=False)
+        if not table.running or orchagent is None or orchagent.state in ('STOPPED', 'EXITED', 'FATAL'):
+            return ''
+        return orchagent.state
+
     def _orchagent_running():
         if duthost.is_multi_asic:
             num_asic = duthost.facts.get('num_asic')
             for asic_index in range(num_asic):
-                cmd = 'docker exec swss{} supervisorctl status orchagent'.format(asic_index)
-                output = duthost.shell(cmd, module_ignore_errors=True)
-                pytest_assert(not output['rc'], "Unable to check orchagent status output for asic_id {}"
+                status = _orchagent_status('swss{}'.format(asic_index))
+                pytest_assert(status, "Unable to check orchagent status output for asic_id {}"
                               .format(asic_index))
-                if 'RUNNING' not in output['stdout']:
+                if 'RUNNING' not in status:
                     return False
             return True
         else:
-            cmds = 'docker exec swss supervisorctl status orchagent'
-            output = duthost.shell(cmds, module_ignore_errors=True)
-            pytest_assert(not output['rc'], "Unable to check orchagent status output")
-            return 'RUNNING' in output['stdout']
+            status = _orchagent_status('swss')
+            pytest_assert(status, "Unable to check orchagent status output")
+            return 'RUNNING' in status
 
     pytest_assert(
         wait_until(120, 10, 0, _orchagent_running),
