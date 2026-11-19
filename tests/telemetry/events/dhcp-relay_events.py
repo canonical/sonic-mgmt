@@ -68,7 +68,7 @@ def trigger_dhcp_relay_bind_failure(duthost, tbinfo):
         duthost.shell("ip -6 address del {} dev {}".format(ipv6_global_unique_ip, vlan))
 
         # Restart dhcrelay process
-        duthost.shell("docker exec dhcp_relay supervisorctl restart {}".format(dhcp6_relay_process))
+        duthost.control_container_process("dhcp_relay", "restart", [dhcp6_relay_process])
         # Wait dhcp6relay to hit bind failure, dhcp6relay would try 6 times with interval 5s, hence wait 35s to hit
         # bind failure
         time.sleep(35)
@@ -100,7 +100,7 @@ def send_dhcp_discover_packets(duthost, tbinfo, ptfadapter, packets_to_send=5, i
         duthost.shell("ip -4 address flush dev {}".format(vlan))
 
         # Restart dhcrelay process
-        duthost.shell("docker exec dhcp_relay supervisorctl restart {}".format(dhcrelay_process))
+        duthost.control_container_process("dhcp_relay", "restart", [dhcrelay_process])
         wait_dhcp_relay_ready(duthost, ['isc'])
 
         # Send packets
@@ -121,4 +121,4 @@ def send_dhcp_discover_packets(duthost, tbinfo, ptfadapter, packets_to_send=5, i
         duthost.shell("ip address add {} dev {}".format(ipv4_ip, vlan))
 
         # Restart dhcrelay process
-        duthost.shell("docker exec dhcp_relay supervisorctl restart {}".format(dhcrelay_process))
+        duthost.control_container_process("dhcp_relay", "restart", [dhcrelay_process])
