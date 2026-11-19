@@ -1,0 +1,22 @@
+@@backend@@
+supervisord
+@@critical@@
+program:zebra
+program:staticd
+program:bgpd
+program:fpmsyncd
+program:bgpcfgd
+@@status@@
+bgpcfgd                          RUNNING   pid 61, uptime 0:12:44
+bgpd                             RUNNING   pid 59, uptime 0:12:44
+bgpmon                           RUNNING   pid 62, uptime 0:12:44
+dependent-startup                EXITED    Nov 10 09:06 PM
+fpmsyncd                         RUNNING   pid 63, uptime 0:12:44
+mgmtd                            RUNNING   pid 42, uptime 0:12:45
+rsyslogd                         RUNNING   pid 37, uptime 0:12:45
+sharpd                           STOPPED   Not started
+staticd                          RUNNING   pid 58, uptime 0:12:44
+supervisor-proc-exit-listener    RUNNING   pid 109, uptime 0:12:43
+zebra                            RUNNING   pid 43, uptime 0:12:45
+zsocket                          EXITED    Nov 10 09:06 PM
+@@end@@
