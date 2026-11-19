@@ -378,9 +378,7 @@ def _update_docker_service(duthost, docker="", action="", service=""):
     """
     A helper function to start/stop service
     """
-    cmd = "docker exec {docker} supervisorctl {action} {service}".format(
-        docker=docker, action=action, service=service)
-    duthost.shell(cmd)
+    duthost.control_container_process(docker, action, [service])
     logger.info("{}ed {}".format(action, service))
 
 
