@@ -118,9 +118,8 @@ class GNMIEnvironment(object):
                 self.gnmi_config_table = "TELEMETRY"
                 self.gnmi_container = TELEMETRY_CONTAINER
                 # GNMI program is telemetry or gnmi-native
-                res = duthost.shell("docker exec %s supervisorctl status" % self.gnmi_container,
-                                    module_ignore_errors=True)
-                if 'telemetry' in res['stdout']:
+                programs = duthost.get_process_table(self.gnmi_container).processes
+                if any('telemetry' in program.full_name for program in programs):
                     self.gnmi_program = "telemetry"
                 else:
                     self.gnmi_program = "gnmi-native"
