@@ -30,11 +30,10 @@ def dump_system_status(duthost):
 
 def check_bmp_status(duthost):
     env = BMPEnvironment(duthost)
-    dut_command = "docker exec %s supervisorctl status %s" % (env.bmp_container, env.bmp_program)
-    output = duthost.shell(dut_command, module_ignore_errors=True)
-    logging.info("check_bmp_status output is: {}".format(output))
+    program = duthost.get_process_table(env.bmp_container).get(env.bmp_program, bare=False)
+    logging.info("check_bmp_status output is: {}".format(program))
 
-    return "RUNNING" in output['stdout']
+    return program is not None and program.state == "RUNNING"
 
 
 """
