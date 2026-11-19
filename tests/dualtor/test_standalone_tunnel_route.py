@@ -31,16 +31,13 @@ pytestmark = [
 @pytest.fixture(autouse=True)
 def cleanup_neighbors(duthosts):
     """Cleanup neighbors while preventing background neighbor updates."""
-    arp_update_stop_cmd = "docker exec swss supervisorctl stop arp_update"
-    arp_update_start_cmd = "docker exec swss supervisorctl start arp_update"
-
     try:
-        duthosts.shell(arp_update_stop_cmd)
+        duthosts.control_container_process("swss", "stop", ["arp_update"])
         duthosts.shell("sonic-clear arp")
         duthosts.shell("sonic-clear ndp")
         yield
     finally:
-        duthosts.shell(arp_update_start_cmd)
+        duthosts.control_container_process("swss", "start", ["arp_update"])
 
 
 @pytest.fixture
