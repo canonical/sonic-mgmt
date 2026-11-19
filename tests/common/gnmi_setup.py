@@ -103,9 +103,8 @@ def dump_system_status(duthost):
 
 def check_gnmi_status(duthost):
     env = GNMIEnvironment(duthost, GNMIEnvironment.GNMI_MODE)
-    dut_command = "docker exec %s supervisorctl status %s" % (env.gnmi_container, env.gnmi_program)
-    output = duthost.shell(dut_command, module_ignore_errors=True)
-    return "RUNNING" in output['stdout']
+    program = duthost.get_process_table(env.gnmi_container).get(env.gnmi_program, bare=False)
+    return program is not None and program.state == "RUNNING"
 
 
 def apply_cert_config(duthost):
@@ -115,17 +114,10 @@ def apply_cert_config(duthost):
     metadata = cfg_facts["DEVICE_METADATA"]["localhost"]
     subtype = metadata.get('subtype', None)
     # Stop all running program
-    dut_command = "docker exec %s supervisorctl status" % (env.gnmi_container)
-    output = duthost.shell(dut_command, module_ignore_errors=True)
-    for line in output['stdout_lines']:
-        res = line.split()
-        if len(res) < 3:
-            continue
-        program = res[0]
-        status = res[1]
-        if status == "RUNNING":
-            dut_command = "docker exec %s supervisorctl stop %s" % (env.gnmi_container, program)
-            duthost.shell(dut_command, module_ignore_errors=True)
+    for program in duthost.get_process_table(env.gnmi_container).processes:
+        if program.state == "RUNNING":
+            duthost.control_container_process(env.gnmi_container, "stop", [program.full_name],
+                                              module_ignore_errors=True)
     dut_command = "docker exec %s pkill %s" % (env.gnmi_container, env.gnmi_process)
     duthost.shell(dut_command, module_ignore_errors=True)
     dut_command = "docker exec %s bash -c " % env.gnmi_container
