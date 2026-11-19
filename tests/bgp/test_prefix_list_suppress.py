@@ -382,10 +382,7 @@ def apply_constants_to_bgpcfgd(duthost):
             "sudo docker cp {0} {1}:{0}".format(CONSTANTS_FILE, container),
             module_ignore_errors=True,
         )
-        duthost.shell(
-            "sudo docker exec {} supervisorctl restart bgpcfgd".format(container),
-            module_ignore_errors=True,
-        )
+        duthost.control_container_process(container, "restart", ["bgpcfgd"], module_ignore_errors=True)
     pytest_assert(
         wait_until(BGPCFGD_RUNNING_TIMEOUT, BGPCFGD_RUNNING_INTERVAL, 0,
                    bgpcfgd_running, duthost),
@@ -698,11 +695,7 @@ class TestAnchorPrefixRegression:
         for container in bgp_container_names(duthost):
             # Place marker, restart bgpcfgd, wait for it to come back
             marker = place_syslog_marker(duthost)
-            duthost.shell(
-                "sudo docker exec {} supervisorctl restart bgpcfgd".format(
-                    container),
-                module_ignore_errors=True,
-            )
+            duthost.control_container_process(container, "restart", ["bgpcfgd"], module_ignore_errors=True)
             sonichost = getattr(duthost, "sonichost", duthost)
             pytest_assert(
                 wait_until(180, 5, 0,
