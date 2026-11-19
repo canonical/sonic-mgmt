@@ -22,7 +22,10 @@ def test_snmp_v2mib(duthosts, enum_rand_one_per_hwsku_hostname, localhost, creds
         duthost, localhost, host=host_ip, version="v2c",
         community=creds_all_duts[duthost.hostname]["snmp_rocommunity"], wait=True)['ansible_facts']
     dut_facts = duthost.setup()['ansible_facts']
-    debian_ver = duthost.shell('cat /etc/debian_version')['stdout']
+    if dut_facts['ansible_distribution'] == 'Ubuntu':
+        distro_ver = dut_facts['ansible_distribution_version']
+    else:
+        distro_ver = duthost.shell('cat /etc/debian_version')['stdout']
     cmd = 'docker exec snmp grep "sysContact" /etc/snmp/snmpd.conf'
     sys_contact = " ".join(duthost.shell(cmd)['stdout'].split()[1:])
     cmd = 'docker exec snmp grep "sysLocation" /etc/snmp/snmpd.conf'
@@ -31,7 +34,7 @@ def test_snmp_v2mib(duthosts, enum_rand_one_per_hwsku_hostname, localhost, creds
     expected_res = {'kernel_version': dut_facts['ansible_kernel'],
                     'hwsku': duthost.facts['hwsku'],
                     'os_version': 'SONiC.{}'.format(duthost.os_version),
-                    'debian_version': '{} {}'.format(dut_facts['ansible_distribution'], debian_ver)}
+                    'debian_version': '{} {}'.format(dut_facts['ansible_distribution'], distro_ver)}
 
     # Verify that sysName, sysLocation and sysContact MIB objects functions properly
     pytest_assert(snmp_facts['ansible_sysname'] == duthost.hostname,
