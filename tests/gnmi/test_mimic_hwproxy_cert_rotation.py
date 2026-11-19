@@ -30,16 +30,14 @@ pytestmark = [
 
 
 def check_gnmi_status(duthost):
-    dut_command = "docker exec gnmi supervisorctl status gnmi-native"
-    output = duthost.shell(dut_command, module_ignore_errors=True)
-    return "RUNNING" in output['stdout']
+    program = duthost.get_process_table("gnmi").get("gnmi-native", bare=False)
+    return program is not None and program.state == "RUNNING"
 
 
 def check_telemetry_status(duthost):
     env = GNMIEnvironment(duthost, GNMIEnvironment.TELEMETRY_MODE)
-    dut_command = "docker exec %s supervisorctl status %s" % (env.gnmi_container, env.gnmi_program)
-    output = duthost.shell(dut_command, module_ignore_errors=True)
-    return "RUNNING" in output['stdout']
+    program = duthost.get_process_table(env.gnmi_container).get(env.gnmi_program, bare=False)
+    return program is not None and program.state == "RUNNING"
 
 
 def test_mimic_hwproxy_cert_rotation(

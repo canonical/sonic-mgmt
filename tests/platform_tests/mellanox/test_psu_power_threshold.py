@@ -66,7 +66,7 @@ def mock_power_threshold(request, duthosts, rand_one_dut_hostname, mock_ambient_
 
         # Restart PSU daemon to take the mock stuff
         logger.info('Restart PSU daemon to take mock PSU power threshold')
-        duthost.shell('docker exec pmon supervisorctl restart psud')
+        duthost.control_container_process("pmon", "restart", ["psud"])
         psudaemon_restarted = True
         time.sleep(2)
     else:
@@ -87,7 +87,7 @@ def mock_power_threshold(request, duthosts, rand_one_dut_hostname, mock_ambient_
 
     if psudaemon_restarted:
         logger.info('Restore PSU daemon')
-        duthost.shell('docker exec pmon supervisorctl restart psud')
+        duthost.control_container_process("pmon", "restart", ["psud"])
         time.sleep(2)
 
 

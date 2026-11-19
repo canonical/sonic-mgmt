@@ -55,14 +55,18 @@ def dut_disable_arp_update(rand_selected_dut):
         rand_selected_dut(AnsibleHost) : dut instance
     """
     duthost = rand_selected_dut
-    if duthost.shell("docker exec -t swss supervisorctl stop arp_update")['stdout_lines'][0] \
-            == 'arp_update: ERROR (not running)':
+    result = duthost.control_container_process("swss", "stop", ["arp_update"], module_ignore_errors=True)
+    if result["rc"] != 0:
+        arp_update = duthost.get_process_table("swss").get("arp_update", bare=False)
+        assert arp_update is not None and arp_update.state != "RUNNING", \
+            "Failed to stop arp_update: {}".format(result.get("stdout") or result.get("stderr"))
         logger.warning("arp_update not running, already disabled")
 
     yield
 
-    assert duthost.shell("docker exec -t swss supervisorctl start arp_update")['stdout_lines'][0] \
-        == 'arp_update: started'
+    duthost.control_container_process("swss", "start", ["arp_update"])
+    arp_update = duthost.get_process_table("swss").get("arp_update", bare=False)
+    assert arp_update is not None and arp_update.state == "RUNNING", "arp_update did not start: {}".format(arp_update)
 
 
 @pytest.fixture(autouse=True, scope="module")

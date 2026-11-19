@@ -182,8 +182,7 @@ def apply_gnmi_cert(duthost, ptfhost):
     ptfhost.copy(src=env.work_dir+env.gnmi_client_key, dest='/root/')
     port = env.gnmi_port
     assert int(port) > 0, "Invalid GNMI port"
-    dut_command = "docker exec %s supervisorctl stop %s" % (env.gnmi_container, env.gnmi_program)
-    duthost.shell(dut_command)
+    duthost.control_container_process(env.gnmi_container, "stop", [env.gnmi_program])
     dut_command = "docker exec %s pkill telemetry" % (env.gnmi_container)
     duthost.shell(dut_command, module_ignore_errors=True)
     dut_command = "docker exec %s bash -c " % env.gnmi_container
@@ -211,14 +210,12 @@ def recover_gnmi_cert(localhost, duthost, skip_cert_cleanup):
     env = GNMIEnvironment(duthost)
     if not skip_cert_cleanup:
         localhost.shell("rm -rf "+env.work_dir, module_ignore_errors=True)
-    dut_command = "docker exec %s supervisorctl status %s" % (env.gnmi_container, env.gnmi_program)
-    output = duthost.command(dut_command, module_ignore_errors=True)['stdout'].strip()
+    output = getattr(duthost.get_process_table(env.gnmi_container).get(env.gnmi_program, bare=False), "state", "")
     if 'RUNNING' in output:
         return
     dut_command = "docker exec %s pkill telemetry" % (env.gnmi_container)
     duthost.shell(dut_command, module_ignore_errors=True)
-    dut_command = "docker exec %s supervisorctl start %s" % (env.gnmi_container, env.gnmi_program)
-    duthost.shell(dut_command)
+    duthost.control_container_process(env.gnmi_container, "start", [env.gnmi_program])
     time.sleep(env.gnmi_server_start_wait_time)
 
 
