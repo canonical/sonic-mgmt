@@ -1,0 +1,13 @@
+@@backend@@
+supervisord
+@@critical@@
+program:openbmpd
+program:bmpcfgd
+@@status@@
+bmp                              EXITED    Nov 10 09:08 PM
+bmpcfgd                          RUNNING   pid 23, uptime 0:11:22
+dependent-startup                EXITED    Nov 10 09:08 PM
+openbmpd                         RUNNING   pid 30, uptime 0:11:22
+rsyslogd                         RUNNING   pid 22, uptime 0:11:22
+supervisor-proc-exit-listener    RUNNING   pid 32, uptime 0:11:20
+@@end@@

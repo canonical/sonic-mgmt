@@ -1,0 +1,15 @@
+@@backend@@
+supervisord
+@@critical@@
+program:teammgrd
+program:teamsyncd
+program:tlm_teamd
+@@status@@
+dependent-startup                EXITED    Nov 10 09:06 PM
+rsyslogd                         RUNNING   pid 20, uptime 0:14:12
+start                            EXITED    Nov 10 09:06 PM
+supervisor-proc-exit-listener    RUNNING   pid 61, uptime 0:14:10
+teammgrd                         RUNNING   pid 25, uptime 0:14:12
+teamsyncd                        RUNNING   pid 64, uptime 0:14:10
+tlm_teamd                        RUNNING   pid 26, uptime 0:14:12
+@@end@@
