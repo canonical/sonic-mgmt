@@ -275,11 +275,8 @@ def orchagent_rss_kb(duthost):
 
 
 def orchagent_is_running(duthost):
-    out = duthost.command(
-        "docker exec swss supervisorctl status orchagent",
-        module_ignore_errors=True,
-    )
-    return "RUNNING" in out.get("stdout", "")
+    orchagent = duthost.get_process_table("swss").get("orchagent", bare=False)
+    return orchagent is not None and orchagent.state == "RUNNING"
 
 
 def fdb_table_has_mac_on_port(duthost, vlan_id, mac, port):
