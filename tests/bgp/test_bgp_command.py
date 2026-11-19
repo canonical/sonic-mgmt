@@ -142,9 +142,9 @@ def test_bgp_commands_with_like_bgp_container(
     like_bgp_container_name = "database-like-bgp"
 
     create_result = duthost.shell(
-        'docker run --rm --detach --name={} -e DEV= docker-database:latest sleep infinity'.format(
-            like_bgp_container_name
-        ),
+        # a rock's entrypoint is pebble, which does not run a command given after the image
+        'docker run --rm --detach --init --name={} -e DEV= --entrypoint /bin/sleep '
+        'docker-database:latest infinity'.format(like_bgp_container_name),
         module_ignore_errors=True
     )
 
