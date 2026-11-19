@@ -101,13 +101,13 @@ def dut_update_radv_periodic_ra_interval(duthosts, rand_one_dut_hostname):
 
     # Notify RADVd to read the updated RA intervals
     logging.info("Notifying RADVd to read the updated config file:%s", RADV_CONF_FILE)
-    duthost.shell("docker exec radv supervisorctl signal SIGHUP radvd")
+    duthost.signal_container_process("radv", "SIGHUP", ["radvd"])
 
     yield
     # Restore the original radvd.conf file
     duthost.shell('docker exec radv cp {} {}'.format(RADV_BACKUP_CONF_FILE, RADV_CONF_FILE))
     duthost.shell('docker exec radv rm -f {}'.format(RADV_BACKUP_CONF_FILE))
-    duthost.shell("docker exec radv supervisorctl signal SIGHUP radvd")
+    duthost.signal_container_process("radv", "SIGHUP", ["radvd"])
     logging.info("Successfully restored RADVd's config back to original")
 
 
