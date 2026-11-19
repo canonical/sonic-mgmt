@@ -483,11 +483,8 @@ class TestSfpThermalStateDb:
         duthost = duthosts[enum_rand_one_per_hwsku_hostname]
 
         # Verify thermalctld is running — if it's not, this test is meaningless
-        thermalctld_result = duthost.shell(
-            "docker exec pmon supervisorctl status thermalctld",
-            module_ignore_errors=True
-        )
-        pytest_assert("RUNNING" in thermalctld_result.get("stdout", ""),
+        thermalctld = duthost.get_process_table("pmon").get("thermalctld", bare=False)
+        pytest_assert(thermalctld is not None and thermalctld.state == "RUNNING",
                       "thermalctld is not running — cannot validate TEMPERATURE_INFO content")
 
         result = duthost.shell(
