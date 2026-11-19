@@ -39,7 +39,7 @@ def stop_and_start_lldpmgrd(duthosts, enum_rand_one_per_hwsku_frontend_hostname)
         process = "lldp"
 
     logger.info("Stopping 'lldpmgrd' process in {} container ...".format(process))
-    stop_command_result = duthost.command("docker exec {} supervisorctl stop lldpmgrd".format(process))
+    stop_command_result = duthost.control_container_process(process, "stop", ["lldpmgrd"])
     exit_code = stop_command_result["rc"]
     pytest_assert(exit_code == 0, "Failed to stop 'lldpmgrd' process in {} container!".format(process))
     logger.info("'lldpmgrd' process in {} container is stopped.".format(process))
@@ -47,7 +47,7 @@ def stop_and_start_lldpmgrd(duthosts, enum_rand_one_per_hwsku_frontend_hostname)
     yield
 
     logger.info("Starting 'lldpmgrd' process in {} container ...".format(process))
-    start_command_result = duthost.command("docker exec {} supervisorctl start lldpmgrd".format(process))
+    start_command_result = duthost.control_container_process(process, "start", ["lldpmgrd"])
     exit_code = start_command_result["rc"]
     pytest_assert(exit_code == 0, "Failed to start 'lldpmgrd' process in {} container!".format(process))
     logger.info("'lldpmgrd' process in {} container is started.".format(process))
