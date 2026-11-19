@@ -1771,12 +1771,8 @@ class QosSaiBase(QosBase):
                 Returns:
                     None
             """
-            host.command(
-                "docker exec {docker} supervisorctl {action} {service}".format(
-                    docker=docker,
-                    action=action,
-                    service=service
-                ),
+            host.control_container_process(
+                docker, action, [service],
                 module_ignore_errors=True
             )
             logger.info("{}ed {}".format(action, service))
@@ -3349,9 +3345,8 @@ class QosSaiBase(QosBase):
                     "stopping lacpd and setting timer", len(lag_names))
 
                 # Step 1: Stop DUT teamd lacpd
-                result = src_dut.command(
-                    "docker exec {} supervisorctl stop lacpd".format(teamd_docker),
-                    module_ignore_errors=True)
+                result = src_dut.control_container_process(
+                    teamd_docker, "stop", ["lacpd"], module_ignore_errors=True)
                 if result.get('failed', False) or result.get('rc', 0) != 0:
                     logger.warning(
                         "permit_only_test_traffic_on_fanout: lacpd stop may have "
@@ -3586,9 +3581,8 @@ class QosSaiBase(QosBase):
         if lacpd_stopped:
             logger.info("permit_only_test_traffic_on_fanout: "
                         "restarting lacpd in %s", teamd_docker)
-            result = src_dut.command(
-                "docker exec {} supervisorctl start lacpd".format(teamd_docker),
-                module_ignore_errors=True)
+            result = src_dut.control_container_process(
+                teamd_docker, "start", ["lacpd"], module_ignore_errors=True)
             if result.get('failed', False) or result.get('rc', 0) != 0:
                 logger.error(
                     "permit_only_test_traffic_on_fanout: lacpd restart "
