@@ -22,6 +22,7 @@ except ImportError:
 from tests.common.devices.base import AnsibleHostBase
 from tests.common.devices.constants import ACL_COUNTERS_UPDATE_INTERVAL_IN_SEC
 from tests.common.helpers.dut_utils import is_supervisor_node, is_macsec_capable_node
+from tests.common.helpers import container_processes
 from tests.common.utilities import get_host_visible_vars, wait_until
 from tests.common.cache import cached
 from tests.common.helpers.constants import DEFAULT_ASIC_ID, DEFAULT_NAMESPACE
@@ -505,6 +506,31 @@ class SonicHost(AnsibleHostBase):
                 return retry
         # Return the final retried result
         return retry
+
+    def get_process_table(self, container):
+        """
+        @summary: Read the programs of a container and their states
+        @return: A container_processes.ContainerProcesses
+        """
+        cmd = container_processes.build_probe_command(container)
+        result = self.shell(cmd, module_ignore_errors=True, verbose=False)
+        result = self._retry_if_oci_exec_race(cmd, result)
+        return container_processes.parse_probe_output(container, result["rc"], result["stdout"])
+
+    def control_container_process(self, container, action, names, module_ignore_errors=False):
+        """
+        @summary: Start, stop or restart programs of a container
+        @param names: Program names; a supervisord group prefix ('group:program') is accepted
+        """
+        return self.shell(container_processes.build_control_command(container, action, names),
+                          module_ignore_errors=module_ignore_errors)
+
+    def signal_container_process(self, container, signal, names, module_ignore_errors=False):
+        """
+        @summary: Send a signal ('SIGHUP' or 'HUP') to programs of a container
+        """
+        return self.shell(container_processes.build_signal_command(container, signal, names),
+                          module_ignore_errors=module_ignore_errors)
 
     def get_critical_group_and_process_lists(self, container_name):
         """
