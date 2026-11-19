@@ -230,8 +230,7 @@ def apply_gnmi_cert(my_duthost, ptfhost):
     )
     port = env.gnmi_port
     assert int(port) > 0, "Invalid GNMI port"
-    dut_command = "docker exec %s supervisorctl stop %s" % (env.gnmi_container, env.gnmi_program)
-    my_duthost.shell(dut_command)
+    my_duthost.control_container_process(env.gnmi_container, "stop", [env.gnmi_program])
     dut_command = "docker exec %s pkill telemetry" % (env.gnmi_container)
     my_duthost.shell(dut_command, module_ignore_errors=True)
     dut_command = "docker exec %s bash -c " % env.gnmi_container
@@ -262,8 +261,7 @@ def recover_gnmi_cert(localhost, my_duthost, skip_cert_cleanup):
     _clear_gnmi_client_cert_role(my_duthost)
     if not skip_cert_cleanup:
         localhost.shell("rm -rf "+env.work_dir, module_ignore_errors=True)
-    status_cmd = "docker exec %s supervisorctl status %s" % (env.gnmi_container, env.gnmi_program)
-    output = my_duthost.command(status_cmd, module_ignore_errors=True)['stdout'].strip()
+    output = getattr(my_duthost.get_process_table(env.gnmi_container).get(env.gnmi_program, bare=False), "state", "")
     if 'RUNNING' in output:
         return
     # Kill any leftover gNMI/telemetry process to avoid port conflicts.
@@ -277,10 +275,9 @@ def recover_gnmi_cert(localhost, my_duthost, skip_cert_cleanup):
         "systemctl reset-failed %s" % env.gnmi_container,
         module_ignore_errors=True,
     )
-    dut_command = "docker exec %s supervisorctl start %s" % (env.gnmi_container, env.gnmi_program)
-    my_duthost.shell(dut_command, module_ignore_errors=True)
+    my_duthost.control_container_process(env.gnmi_container, "start", [env.gnmi_program], module_ignore_errors=True)
     time.sleep(3)
-    output = my_duthost.shell(status_cmd, module_ignore_errors=True)['stdout'].strip()
+    output = getattr(my_duthost.get_process_table(env.gnmi_container).get(env.gnmi_program, bare=False), "state", "")
     if 'RUNNING' not in output:
         # Fallback to container restart to restore default supervisor-managed service.
         my_duthost.shell(
