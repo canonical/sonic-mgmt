@@ -1622,6 +1622,10 @@ def kill_process_by_pid(duthost, container_name, program_name, program_pid):
         # If we used the command `supervisorctl stop <proc_name>' to stop process,
         # Supervisord will treat the exit code of process as expected and it will not generate
         # alerting message.
+        # pebble reports pid -1 for a service it cannot match; `kill -SIGKILL -1` would kill every process
+        pytest_assert(isinstance(program_pid, int) and program_pid > 0,
+                      "Refusing to kill program '{}' in container '{}': pid {} is not a process"
+                      .format(program_name, container_name, program_pid))
         kill_cmd_result = duthost.shell("docker exec {} kill -SIGKILL {}".format(container_name, program_pid))
 
     # Get the exit code of 'kill' or 'supervisorctl stop' command
