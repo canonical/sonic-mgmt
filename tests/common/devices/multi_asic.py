@@ -9,6 +9,7 @@ from tests.common.errors import RunAnsibleModuleFail
 from tests.common.devices.sonic import SonicHost
 from tests.common.devices.sonic_asic import SonicAsic
 from tests.common.devices.sonic_docker import SonicDockerManager
+from tests.common.helpers import container_processes
 from tests.common.helpers.assertions import pytest_assert
 from tests.common.helpers.constants import DEFAULT_ASIC_ID, DEFAULT_NAMESPACE, ASICS_PRESENT
 from tests.common.platform.interface_utils import get_dut_interfaces_status
@@ -581,24 +582,24 @@ class MultiAsicSonicHost(object):
             # and gbsyncd feature will be added to services
             if self.get_facts()['asic_type'] == 'vs' and "gbsyncd" in docker:
                 continue
+            # Edit through the container's root from the host: some rock containers ship no sed
             cmd_disable_rate_limit = (
-                r"docker exec -i {} sed -i "
+                r"sudo sed -i "
                 r"'s/^\$SystemLogRateLimit/#\$SystemLogRateLimit/g' "
-                r"/etc/rsyslog.conf"
+                r"/proc/$(docker inspect -f \{{\{{.State.Pid\}}\}} {})/root/etc/rsyslog.conf"
             )
             cmd_enable_rate_limit = (
-                r"docker exec -i {} sed -i "
+                r"sudo sed -i "
                 r"'s/^#\$SystemLogRateLimit/\$SystemLogRateLimit/g' "
-                r"/etc/rsyslog.conf"
+                r"/proc/$(docker inspect -f \{{\{{.State.Pid\}}\}} {})/root/etc/rsyslog.conf"
             )
-            cmd_reload = r"docker exec -i {} supervisorctl restart rsyslogd"
             cmds = []
 
             if rl_option == 'disable':
                 cmds.append(cmd_disable_rate_limit.format(docker))
             else:
                 cmds.append(cmd_enable_rate_limit.format(docker))
-            cmds.append(cmd_reload.format(docker))
+            cmds.append(container_processes.build_control_command(docker, "restart", ["rsyslogd"]))
             self.sonichost.shell_cmds(cmds=cmds)
 
     def get_bgp_neighbors(self, namespace=None):
