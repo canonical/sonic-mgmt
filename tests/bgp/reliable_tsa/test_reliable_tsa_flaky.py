@@ -7,6 +7,7 @@ from tests.common import reboot, config_reload
 from tests.common.helpers.multi_thread_utils import SafeThreadPoolExecutor
 from tests.common.reboot import wait_for_startup
 from tests.common.helpers.assertions import pytest_assert
+from tests.common.helpers.dut_utils import get_program_info, kill_process_by_pid
 from tests.common.utilities import wait_until
 from tests.common.platform.processes_utils import _all_critical_processes_healthy
 from tests.common.platform.interface_utils import check_interface_status_of_up_ports
@@ -128,45 +129,6 @@ def verify_route_on_neighbors_when_duts_on_tsb(duthosts, dut_nbrhosts, orig_v4_r
             if not check_and_log_routes_diff(linecard, dut_nbrhosts[linecard],
                                              orig_v6_routes[linecard], cur_v6_routes, 6):
                 pytest.fail("Not all ipv6 routes are announced to neighbors")
-
-
-def kill_process_by_pid(duthost, container_name, program_name, program_pid):
-    """
-    @summary: Kill a process in the specified container by its pid
-    """
-    kill_cmd_result = duthost.shell("docker exec {} kill -SIGKILL {}".format(container_name, program_pid))
-
-    # Get the exit code of 'kill' command
-    exit_code = kill_cmd_result["rc"]
-    pytest_assert(exit_code == 0, "Failed to stop program '{}' before test".format(program_name))
-
-    logger.info("Program '{}' in container '{}' was stopped successfully"
-                .format(program_name, container_name))
-
-
-def get_program_info(duthost, container_name, program_name):
-    """
-    @summary: Get program running status and its pid by analyzing the command
-              output of "docker exec <container_name> supervisorctl status"
-    @return:  Program running status and its pid
-    """
-    program_status = None
-    program_pid = -1
-
-    program_list = duthost.shell("docker exec {} supervisorctl status".
-                                 format(container_name), module_ignore_errors=True)
-    for program_info in program_list["stdout_lines"]:
-        if program_info.find(program_name) != -1:
-            program_status = program_info.split()[1].strip()
-            if program_status == "RUNNING":
-                program_pid = int(program_info.split()[3].strip(','))
-            break
-
-    if program_pid != -1:
-        logger.info("Found program '{}' in the '{}' state with pid {}"
-                    .format(program_name, program_status, program_pid))
-
-    return program_status, program_pid
 
 
 def is_process_running(duthost, container_name, program_name):

@@ -234,8 +234,12 @@ def check_interface_status(duthost):
 def restart_dhcp_relay_and_check_dhcp6relay(duthost):
     duthost.shell("sudo systemctl reset-failed dhcp_relay")
     duthost.shell("sudo systemctl restart dhcp_relay")
-    wait_until(60, 3, 0, lambda: ("RUNNING" in duthost.shell("docker exec dhcp_relay supervisorctl status " +
-                                                             "dhcp-relay:dhcp6relay | awk '{print $2}'")["stdout"]))
+
+    def _dhcp6relay_running():
+        dhcp6relay = duthost.get_process_table("dhcp_relay").get("dhcp-relay:dhcp6relay", bare=False)
+        return dhcp6relay is not None and dhcp6relay.state == "RUNNING"
+
+    wait_until(60, 3, 0, _dhcp6relay_running)
 
 
 def ensure_client_reachability(duthost, vlan_name):

@@ -111,11 +111,8 @@ class TestPerComponentPollingIntervals:
             pytest.skip("No per-component polling intervals configured in platform.json")
 
         # Verify thermalctld is running
-        result = duthost.shell(
-            "docker exec pmon supervisorctl status thermalctld",
-            module_ignore_errors=True
-        )
-        pytest_assert("RUNNING" in result["stdout"],
+        thermalctld = duthost.get_process_table("pmon").get("thermalctld", bare=False)
+        pytest_assert(thermalctld is not None and thermalctld.state == "RUNNING",
                       "thermalctld is not running")
 
         logger.info("Per-component polling intervals found: %s", json.dumps(intervals, indent=2))
@@ -141,11 +138,8 @@ class TestPerComponentPollingIntervals:
             pytest.skip("No per-thermal polling intervals configured in platform.json")
 
         # Verify thermalctld is running
-        result = duthost.shell(
-            "docker exec pmon supervisorctl status thermalctld",
-            module_ignore_errors=True
-        )
-        pytest_assert("RUNNING" in result["stdout"],
+        thermalctld = duthost.get_process_table("pmon").get("thermalctld", bare=False)
+        pytest_assert(thermalctld is not None and thermalctld.state == "RUNNING",
                       "thermalctld is not running")
 
         # Pick the thermal with the shortest configured interval
@@ -418,11 +412,8 @@ class TestPerComponentPollingIntervals:
                         "this test is for the no-config case")
 
         # Verify thermalctld is running
-        result = duthost.shell(
-            "docker exec pmon supervisorctl status thermalctld",
-            module_ignore_errors=True
-        )
-        pytest_assert("RUNNING" in result["stdout"],
+        thermalctld = duthost.get_process_table("pmon").get("thermalctld", bare=False)
+        pytest_assert(thermalctld is not None and thermalctld.state == "RUNNING",
                       "thermalctld is not running")
 
         # Get any thermal sensor

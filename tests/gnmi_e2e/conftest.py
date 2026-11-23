@@ -55,11 +55,11 @@ def apply_cert_config(duthost):
     setup_service_config(duthost, gnmi_env.gnmi_config_table, gnmi_env.gnmi_port)
 
     # restart gnmi
-    command = "docker exec {} supervisorctl stop {}".format(gnmi_env.gnmi_container, gnmi_env.gnmi_program)
-    duthost.shell(command, module_ignore_errors=True)
+    duthost.control_container_process(gnmi_env.gnmi_container, "stop", [gnmi_env.gnmi_program],
+                                      module_ignore_errors=True)
 
-    command = "docker exec {} supervisorctl start {}".format(gnmi_env.gnmi_container, gnmi_env.gnmi_program)
-    duthost.shell(command, module_ignore_errors=True)
+    duthost.control_container_process(gnmi_env.gnmi_container, "start", [gnmi_env.gnmi_program],
+                                      module_ignore_errors=True)
 
     # tememetry container not avaliable on all image
     if telemetry_enabled(duthost):
@@ -68,11 +68,11 @@ def apply_cert_config(duthost):
         setup_service_config(duthost, tele_env.gnmi_config_table, tele_env.gnmi_port)
 
         # Restart telemetry service to apply the updated configuration changes
-        command = "docker exec {} supervisorctl stop {}".format(tele_env.gnmi_container, tele_env.gnmi_program)
-        duthost.shell(command, module_ignore_errors=True)
+        duthost.control_container_process(tele_env.gnmi_container, "stop", [tele_env.gnmi_program],
+                                          module_ignore_errors=True)
 
-        command = "docker exec {} supervisorctl start {}".format(tele_env.gnmi_container, tele_env.gnmi_program)
-        duthost.shell(command, module_ignore_errors=True)
+        duthost.control_container_process(tele_env.gnmi_container, "start", [tele_env.gnmi_program],
+                                          module_ignore_errors=True)
 
 
 def recover_cert_config(duthost):

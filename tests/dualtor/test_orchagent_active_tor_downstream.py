@@ -90,7 +90,7 @@ def test_active_tor_remove_neighbor_downstream_active(
                 yield
         finally:
             ptfhost.shell("supervisorctl start arp_responder")
-            duthost.shell("docker exec -t swss supervisorctl restart arp_update")
+            duthost.control_container_process("swss", "restart", ["arp_update"])
 
     try:
         removed_neighbor = {}

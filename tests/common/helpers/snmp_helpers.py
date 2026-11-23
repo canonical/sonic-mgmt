@@ -16,9 +16,8 @@ global_snmp_facts = {}
 
 
 def is_snmp_subagent_running(duthost):
-    cmd = "docker exec snmp supervisorctl status snmp-subagent"
-    output = duthost.shell(cmd)
-    if "RUNNING" in output["stdout"]:
+    subagent = duthost.get_process_table("snmp").get("snmp-subagent", bare=False)
+    if subagent is not None and subagent.state == "RUNNING":
         logger.info("SNMP Sub-Agent is Running")
         return True
     logger.info("SNMP Sub-Agent is Not Running")
