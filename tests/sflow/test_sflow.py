@@ -175,7 +175,7 @@ def get_port_index(duthost, port):
 
     # if sonic_py_common.port_util exist, use port_util from sonic_py_common.
     util_lib = "swsssdk"
-    cmd = "{} -c \"import pkgutil; print(pkgutil.find_loader(\'sonic_py_common.port_util\'))\"".format(
+    cmd = "{} -c \"import importlib.util; print(importlib.util.find_spec(\'sonic_py_common.port_util\'))\"".format(
         py_version)
     class_exist = duthost.shell(cmd)['stdout']
     if class_exist != "None":
