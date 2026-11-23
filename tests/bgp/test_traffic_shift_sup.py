@@ -23,7 +23,7 @@ It tests TSA/B functionality from supervisor
 @pytest.fixture(scope="module")
 def check_support(duthosts, enum_supervisor_dut_hostname):
     duthost = duthosts[enum_supervisor_dut_hostname]
-    rcli_path = duthost.shell("python3 -c \"import pkgutil ; print(pkgutil.find_loader('rcli'))\"")['stdout']
+    rcli_path = duthost.shell("python3 -c \"import importlib.util; print(importlib.util.find_spec('rcli'))\"")['stdout']
     if str(rcli_path) == "None":
         pytest.skip("rcli package not installed. TSA/B/C from supervisor is not supported in this image")
 
