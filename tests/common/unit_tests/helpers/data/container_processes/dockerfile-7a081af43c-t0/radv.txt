@@ -1,0 +1,12 @@
+@@backend@@
+supervisord
+@@critical@@
+program:radvd
+@@status@@
+dependent-startup                EXITED    Nov 10 09:06 PM
+radvd                            RUNNING   pid 65, uptime 0:13:34
+rsyslogd                         RUNNING   pid 22, uptime 0:13:45
+start                            EXITED    Nov 10 09:06 PM
+supervisor-proc-exit-listener    RUNNING   pid 34, uptime 0:13:43
+wait_for_link                    EXITED    Nov 10 09:06 PM
+@@end@@

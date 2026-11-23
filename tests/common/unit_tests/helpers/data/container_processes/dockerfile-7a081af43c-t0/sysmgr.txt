@@ -1,0 +1,10 @@
+@@backend@@
+supervisord
+@@critical@@
+program:rebootbackend
+@@status@@
+dependent-startup                EXITED    Nov 10 09:06 PM
+rebootbackend                    RUNNING   pid 17, uptime 0:14:08
+rsyslogd                         RUNNING   pid 16, uptime 0:14:08
+supervisor-proc-exit-listener    RUNNING   pid 15, uptime 0:14:08
+@@end@@

@@ -1,0 +1,14 @@
+@@backend@@
+supervisord
+@@critical@@
+group:dhcp-relay
+@@status@@
+dependent-startup                EXITED    Nov 10 09:07 PM
+dhcp-relay:dhcp6relay            RUNNING   pid 72, uptime 0:12:41
+dhcp-relay:dhcprelayd            RUNNING   pid 73, uptime 0:12:41
+dhcpmon:dhcpmon-Vlan1000         RUNNING   pid 77, uptime 0:12:39
+isc-dhcpv4-relay-Vlan1000        RUNNING   pid 74, uptime 0:12:41
+rsyslogd                         RUNNING   pid 19, uptime 0:13:02
+start                            EXITED    Nov 10 09:07 PM
+supervisor-proc-exit-listener    RUNNING   pid 24, uptime 0:13:00
+@@end@@
