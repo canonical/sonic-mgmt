@@ -70,7 +70,7 @@ def check_monit_running(duthost):
 
 
 def event_publish_tool(duthost, json_file='', count=1):
-    cmd = "docker exec eventd python /usr/bin/events_publish_tool.py"
+    cmd = "docker exec eventd python3 /usr/bin/events_publish_tool.py"
     if json_file == '':
         cmd += " -c {}".format(count)
     else:
