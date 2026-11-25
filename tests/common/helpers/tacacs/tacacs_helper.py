@@ -106,6 +106,11 @@ def fix_symbolic_link_in_config(duthost, ptfhost, symbolic_link_path, path_to_be
     ptfhost.shell("sed -i 's|{0}|{1}|g' /etc/tacacs+/tac_plus.conf".format(link_path_regex, target_path_regex))
 
 
+def real_path(duthost, path):
+    """The path SONiC sends to the TACACS+ server for a command: its target with every symbolic link resolved."""
+    return duthost.shell("readlink -f {0}".format(path))['stdout']
+
+
 def get_ld_path(duthost):
     """
         Fix symbolic link in tacacs config
@@ -187,6 +192,8 @@ def setup_tacacs_server(ptfhost, tacacs_creds, duthost):
 
     # Find 'python' command symbolic link target, and fix the tac_plus config file
     fix_symbolic_link_in_config(duthost, ptfhost, "/usr/bin/python")
+    # On Ubuntu /usr/bin/cat is a link to the uutils coreutils binary
+    fix_symbolic_link_in_config(duthost, ptfhost, "/usr/bin/cat")
 
     # Find ld lib symbolic link target, and fix the tac_plus config file
     fix_ld_path_in_config(duthost, ptfhost)

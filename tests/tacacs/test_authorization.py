@@ -5,7 +5,7 @@ from _pytest.outcomes import Failed
 import time
 
 from tests.common.helpers.tacacs.tacacs_helper import stop_tacacs_server, start_tacacs_server, \
-    per_command_authorization_skip_versions, remove_all_tacacs_server, get_ld_path, \
+    per_command_authorization_skip_versions, remove_all_tacacs_server, get_ld_path, real_path, \
     check_tacacs  # noqa: F401
 from tests.tacacs.utils import change_and_wait_aaa_config_update, ensure_tacacs_server_running_after_ut, \
     ssh_connect_remote_retry, ssh_run_command, TIMEOUT_LIMIT, \
@@ -145,7 +145,8 @@ def check_authorization_tacacs_only(
 
     # Verify TACACS+ user can't run command not in server side whitelist.
     exit_code, stdout, stderr = ssh_run_command(remote_user_client, "cat /etc/passwd", expect_exit_code=1, verify=True)
-    check_ssh_output_any_of(stdout, ['/usr/bin/cat authorize failed by TACACS+ with given arguments, not executing'])
+    check_ssh_output_any_of(stdout, ['{} authorize failed by TACACS+ with given arguments, not executing'
+                                     .format(real_path(duthost, "/usr/bin/cat"))])
 
     # Verify Local user can't login.
     dutip = duthost.mgmt_ip
@@ -306,7 +307,8 @@ def test_authorization_tacacs_and_local(
 
     # Verify TACACS+ user can't run command not in server side whitelist but have local permission.
     exit_code, stdout, stderr = ssh_run_command(remote_user_client, "cat /etc/passwd", expect_exit_code=1, verify=True)
-    check_ssh_output_any_of(stdout, ['/usr/bin/cat authorize failed by TACACS+ with given arguments, not executing'])
+    check_ssh_output_any_of(stdout, ['{} authorize failed by TACACS+ with given arguments, not executing'
+                                     .format(real_path(duthost, "/usr/bin/cat"))])
 
     # Verify Local user can't login.
     dutip = duthost.mgmt_ip
@@ -507,28 +509,31 @@ def test_tacacs_authorization_wildcard(
                                     check_tacacs,  # noqa: F811
                                     remote_user_client,
                                     remote_rw_user_client):
+    duthost = duthosts[enum_rand_one_per_hwsku_hostname]
+    ls_path = real_path(duthost, "/usr/bin/ls")
+    sudo_path = real_path(duthost, "/usr/bin/sudo")
     # Create files for command with wildcards
     create_test_files(remote_user_client)
 
     # Verify command with wildcard been send to TACACS server side correctly.
     exit_code, stdout, stderr = ssh_run_command(remote_user_client, "ls *",
                                                 expect_exit_code=0, verify=True)
-    check_server_received(ptfhost, "cmd=/usr/bin/ls")
+    check_server_received(ptfhost, "cmd=" + ls_path)
     check_server_received(ptfhost, "cmd-arg=*")
 
     exit_code, stdout, stderr = ssh_run_command(remote_user_client, "ls testfile.?",
                                                 expect_exit_code=0, verify=True)
-    check_server_received(ptfhost, "cmd=/usr/bin/ls")
+    check_server_received(ptfhost, "cmd=" + ls_path)
     check_server_received(ptfhost, "cmd-arg=testfile.?")
 
     exit_code, stdout, stderr = ssh_run_command(remote_user_client, "ls testfile*",
                                                 expect_exit_code=0, verify=True)
-    check_server_received(ptfhost, "cmd=/usr/bin/ls")
+    check_server_received(ptfhost, "cmd=" + ls_path)
     check_server_received(ptfhost, "cmd-arg=testfile*")
 
     exit_code, stdout, stderr = ssh_run_command(remote_user_client, "ls test*.?",
                                                 expect_exit_code=0, verify=True)
-    check_server_received(ptfhost, "cmd=/usr/bin/ls")
+    check_server_received(ptfhost, "cmd=" + ls_path)
     check_server_received(ptfhost, "cmd-arg=test*.?")
 
     # Create files for command with wildcards
@@ -537,13 +542,13 @@ def test_tacacs_authorization_wildcard(
     # Verify sudo command with * been send to TACACS server side correctly.
     exit_code, stdout, stderr = ssh_run_command(remote_rw_user_client, "sudo ls test*.?",
                                                 expect_exit_code=0, verify=True)
-    check_server_received(ptfhost, "cmd=/usr/bin/sudo")
+    check_server_received(ptfhost, "cmd=" + sudo_path)
     check_server_received(ptfhost, "cmd-arg=ls")
     check_server_received(ptfhost, "cmd-arg=test*.?")
 
     # Not check exit code, if no match found zgrep will exit with 1
     exit_code, stdout, stderr = ssh_run_command(remote_rw_user_client, "sudo zgrep pfcwd /var/log/syslog*")
-    check_server_received(ptfhost, "cmd=/usr/bin/sudo")
+    check_server_received(ptfhost, "cmd=" + sudo_path)
     check_server_received(ptfhost, "cmd-arg=zgrep")
     check_server_received(ptfhost, "cmd-arg=pfcwd")
     check_server_received(ptfhost, "cmd-arg=/var/log/syslog*")
